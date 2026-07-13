@@ -1,0 +1,28 @@
+@import 'tailwindcss';
+/* The Thai webfont (Noto Sans Thai) is loaded via a <link> in resources/views/app.blade.php. */
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source './**/*.tsx';
+
+@theme {
+    /* Thai-first UI: Noto Sans Thai reads well for Thai + Latin, with system fallbacks. */
+    --font-sans: 'Noto Sans Thai', 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
+        'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+}
+
+html {
+    -webkit-text-size-adjust: 100%;
+}
+
+html,
+body,
+#app {
+    min-height: 100%;
+}
+
+body {
+    margin: 0;
+    background: #f8fafc;
+    color: #1e293b;
+}

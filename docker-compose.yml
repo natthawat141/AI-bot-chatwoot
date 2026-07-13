@@ -1,0 +1,117 @@
+# Root orchestrator for the demo stack. Run from the repo root:
+#   docker compose up -d --build
+# Each service keeps its own Dockerfile inside its folder; this file only wires
+# them together. Secrets are injected at runtime from gitignored env files.
+services:
+  line-bot-service:
+    build: ./line-bot-service
+    image: line-bot-service:local
+    container_name: line-bot-service
+    env_file:
+      - ./line-bot-service/.env
+    environment:
+      PORT: "8080"
+      # Inside the compose network the Laravel app is reachable by service name;
+      # this overrides the host-oriented URLs in .env.
+      KNOWLEDGE_API_URL: http://management:8001
+      ANALYTICS_API_URL: http://management:8001
+    ports:
+      - "8080:8080"
+    depends_on:
+      # Wait until the Laravel app has migrated, seeded and is serving before the
+      # bot starts — avoids a cold-start race where the first knowledge fetch fails.
+      management:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/health', timeout=3)"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    # Cap logs so a long-running demo VM does not fill its disk.
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Laravel management app (knowledge CRUD + read API + analytics sink).
+  # Demo profile: SQLite on a named volume + `artisan serve`.
+  management:
+    build: ./line-bot-management
+    image: line-bot-management:local
+    container_name: line-bot-management
+    env_file:
+      - ./line-bot-service/.env.management
+    environment:
+      APP_ENV: local
+      APP_DEBUG: "true"
+      APP_URL: http://localhost:8001
+      DB_CONNECTION: sqlite
+      DB_DATABASE: /data/database.sqlite
+      SESSION_DRIVER: database
+      CACHE_STORE: database
+      QUEUE_CONNECTION: database
+      LOG_CHANNEL: stderr
+      RUN_MIGRATIONS: "false" # DB file must exist first — handled in command below
+    command:
+      - sh
+      - -c
+      - >-
+        mkdir -p /data
+        && touch /data/database.sqlite
+        && php artisan migrate --force
+        && php artisan db:seed --force
+        && php artisan db:seed --class=DemoClinicDataSeeder --force
+        && php artisan db:seed --class=LocalBotTokenSeeder --force
+        && php artisan serve --host=0.0.0.0 --port=8001
+    volumes:
+      - management-data:/data
+    ports:
+      - "8001:8001"
+    restart: unless-stopped
+    healthcheck:
+      # Laravel's built-in health route (bootstrap/app.php: health: '/up').
+      # Uses php (always present) so no extra tools are needed in the image.
+      test:
+        - CMD
+        - php
+        - -r
+        - "exit(@file_get_contents('http://127.0.0.1:8001/up') !== false ? 0 : 1);"
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 60s # first boot runs migrate + seed
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Public tunnel so the LINE webhook keeps its existing URL:
+  # https://pod-skater-raging.ngrok-free.dev/webhook
+  # Optional (profile "tunnel") — requires NGROK_AUTHTOKEN in the environment.
+  ngrok:
+    profiles:
+      - tunnel
+    image: ngrok/ngrok:latest
+    container_name: line-bot-ngrok
+    command:
+      - http
+      - line-bot-service:8080
+      - --url=pod-skater-raging.ngrok-free.dev
+    environment:
+      NGROK_AUTHTOKEN: ${NGROK_AUTHTOKEN:-}
+    ports:
+      - "4040:4040" # ngrok inspector UI
+    depends_on:
+      - line-bot-service
+    restart: unless-stopped
+
+volumes:
+  management-data:

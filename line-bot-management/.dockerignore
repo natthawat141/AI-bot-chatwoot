@@ -1,0 +1,30 @@
+# Keep the build context small and never bake secrets / local artifacts in.
+.env
+.env.*
+!.env.example
+database/*.sqlite
+
+vendor
+node_modules
+public/build
+public/hot
+public/storage
+
+storage/app/public/*
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+storage/logs/*
+
+# Host-generated caches reference dev-only packages; the container regenerates them.
+bootstrap/cache/*.php
+
+.git
+.gitignore
+tests
+.phpunit.result.cache
+README.md
+docs
+
+npm-debug.log*
+yarn-error.log*

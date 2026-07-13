@@ -1,0 +1,165 @@
+import { Link, router, usePage } from '@inertiajs/react';
+import {
+    Package,
+    Tags,
+    HelpCircle,
+    BookOpen,
+    BookOpenCheck,
+    KeyRound,
+    FileSpreadsheet,
+    LayoutDashboard,
+    LogOut,
+    Menu,
+    CheckCircle2,
+    AlertCircle,
+} from 'lucide-react';
+import { useEffect, useState, type ReactNode } from 'react';
+import type { PageProps } from '@/types';
+import { routes } from '@/lib/routes';
+
+interface NavItem {
+    label: string;
+    href: string;
+    icon: typeof LayoutDashboard;
+    match: string;
+}
+
+const nav: NavItem[] = [
+    { label: 'แดชบอร์ด', href: routes.dashboard, icon: LayoutDashboard, match: '/admin/dashboard' },
+    { label: 'คู่มือ / Guide', href: routes.guide, icon: BookOpenCheck, match: '/admin/guide' },
+    { label: 'หมวดบริการ', href: routes.categories.index, icon: Tags, match: '/admin/package-categories' },
+    { label: 'แพ็กเกจ', href: routes.packages.index, icon: Package, match: '/admin/packages' },
+    { label: 'คำถามพบบ่อย', href: routes.faqs.index, icon: HelpCircle, match: '/admin/faqs' },
+    { label: 'คลังความรู้', href: routes.knowledge.index, icon: BookOpen, match: '/admin/knowledge' },
+    { label: 'นำเข้าแพ็กเกจ', href: routes.imports.index, icon: FileSpreadsheet, match: '/admin/imports' },
+    { label: 'โทเคน API', href: routes.apiTokens.index, icon: KeyRound, match: '/admin/api-tokens' },
+];
+
+function FlashMessages() {
+    const { flash } = usePage<PageProps>().props;
+    const [visible, setVisible] = useState(true);
+
+    useEffect(() => {
+        setVisible(true);
+        if (flash.success || flash.error) {
+            const t = setTimeout(() => setVisible(false), 5000);
+            return () => clearTimeout(t);
+        }
+    }, [flash.success, flash.error]);
+
+    if (!visible || (!flash.success && !flash.error)) {
+        return null;
+    }
+
+    return (
+        <div className="fixed top-4 right-4 z-50 w-full max-w-sm">
+            {flash.success && (
+                <div className="mb-2 flex items-start gap-2 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800 shadow">
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
+                    <span>{flash.success}</span>
+                </div>
+            )}
+            {flash.error && (
+                <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 shadow">
+                    <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                    <span>{flash.error}</span>
+                </div>
+            )}
+        </div>
+    );
+}
+
+export default function AdminLayout({ title, actions, children }: { title: string; actions?: ReactNode; children: ReactNode }) {
+    const page = usePage<PageProps>();
+    const auth = page.props.auth;
+    const currentUrl = page.url;
+    const [open, setOpen] = useState(false);
+
+    function logout() {
+        router.post(routes.logout);
+    }
+
+    const isActive = (match: string) => currentUrl.startsWith(match);
+
+    const sidebar = (
+        <nav className="flex h-full flex-col gap-1 p-3">
+            <div className="px-3 py-4">
+                <p className="text-lg font-bold text-green-700">AI Knowledge</p>
+                <p className="text-xs text-slate-500">จัดการข้อมูลที่ AI ใช้ตอบ</p>
+            </div>
+            {nav.map((item) => {
+                const Icon = item.icon;
+                return (
+                    <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={() => setOpen(false)}
+                        className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition ${
+                            isActive(item.match)
+                                ? 'bg-green-600 text-white'
+                                : 'text-slate-600 hover:bg-slate-100'
+                        }`}
+                    >
+                        <Icon className="h-4 w-4" />
+                        {item.label}
+                    </Link>
+                );
+            })}
+            <div className="mt-auto border-t border-slate-200 px-3 pt-3">
+                <p className="truncate px-1 text-xs text-slate-500">{auth.user?.email}</p>
+                <button
+                    type="button"
+                    onClick={logout}
+                    className="mt-2 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-600 transition hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600"
+                >
+                    <LogOut className="h-4 w-4" />
+                    ออกจากระบบ
+                </button>
+            </div>
+        </nav>
+    );
+
+    return (
+        <div className="min-h-screen lg:flex">
+            <FlashMessages />
+
+            {/* Desktop sidebar */}
+            <aside className="sticky top-0 hidden h-screen w-64 shrink-0 border-r border-slate-200 bg-white lg:block">{sidebar}</aside>
+
+            {/* Mobile drawer */}
+            {open && (
+                <div className="fixed inset-0 z-40 lg:hidden">
+                    <div className="absolute inset-0 bg-black/30" onClick={() => setOpen(false)} />
+                    <aside className="absolute left-0 top-0 h-full w-64 bg-white shadow-xl">{sidebar}</aside>
+                </div>
+            )}
+
+            <div className="flex min-h-screen min-w-0 flex-1 flex-col">
+                <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-slate-200 bg-white/90 px-4 py-3 backdrop-blur lg:px-6">
+                    <button className="lg:hidden" onClick={() => setOpen(true)} aria-label="เมนู">
+                        <Menu className="h-5 w-5 text-slate-600" />
+                    </button>
+                    <h1 className="min-w-0 flex-1 truncate text-lg font-semibold text-slate-800">{title}</h1>
+                    {actions}
+                </header>
+
+                <main className="mx-auto w-full max-w-[1440px] flex-1 px-4 py-6 lg:px-8">{children}</main>
+
+                <footer className="border-t border-slate-200 bg-white px-4 py-4 text-sm text-slate-600 lg:px-8">
+                    <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                        <p>
+                            หากระบบมีปัญหา ติดต่อผู้สร้าง{' '}
+                            <a
+                                href="mailto:bill.natthawat@gmail.com"
+                                className="font-medium text-green-700 underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600"
+                            >
+                                bill.natthawat@gmail.com
+                            </a>
+                        </p>
+                        <p className="text-xs text-slate-500">Bill Natthawat × Aion3</p>
+                    </div>
+                </footer>
+            </div>
+        </div>
+    );
+}
