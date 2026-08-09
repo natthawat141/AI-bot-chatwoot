@@ -39,15 +39,23 @@ class DatabaseSeeder extends Seeder
             return;
         }
 
-        User::updateOrCreate(
-            ['email' => $email],
-            [
-                'name' => env('ADMIN_NAME', 'Administrator'),
-                'password' => Hash::make($password),
-                'is_admin' => true,
-                'email_verified_at' => now(),
-            ]
-        );
+        $attributes = [
+            'name' => env('ADMIN_NAME', 'Administrator'),
+            'email' => $email,
+            'password' => Hash::make($password),
+            'is_admin' => true,
+            'email_verified_at' => now(),
+        ];
+
+        // Keep the single owner account when credentials change, instead of
+        // creating a second administrator with the new email address.
+        $admin = User::query()->where('is_admin', true)->orderBy('id')->first();
+
+        if ($admin) {
+            $admin->update($attributes);
+        } else {
+            User::create($attributes);
+        }
 
         $this->command?->info("Admin user ensured for {$email}.");
     }

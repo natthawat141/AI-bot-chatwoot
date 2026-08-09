@@ -4,7 +4,7 @@ import type { ReactNode, InputHTMLAttributes, TextareaHTMLAttributes, SelectHTML
 
 const labelBase = 'block text-sm font-medium text-slate-700 mb-1';
 const controlBase =
-    'block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm placeholder:text-slate-400 focus:border-green-500 focus:ring-2 focus:ring-green-200 focus:outline-none disabled:bg-slate-100';
+    'block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm placeholder:text-slate-400 focus:border-[#2773E4] focus:ring-2 focus:ring-blue-200 focus:outline-none disabled:bg-slate-100';
 
 export function Field({
     label,
@@ -67,7 +67,7 @@ export function Toggle({
                 type="checkbox"
                 checked={checked}
                 onChange={(e) => onChange(e.target.checked)}
-                className="h-4 w-4 rounded border-slate-300 text-green-600 focus:ring-green-500"
+                className="h-4 w-4 rounded border-slate-300 text-[#2773E4] focus:ring-[#2773E4]"
             />
             <span className="text-sm text-slate-700">{label}</span>
         </label>
@@ -77,7 +77,7 @@ export function Toggle({
 type Variant = 'primary' | 'secondary' | 'danger' | 'ghost';
 
 const variants: Record<Variant, string> = {
-    primary: 'bg-green-600 text-white hover:bg-green-700 focus:ring-green-300',
+    primary: 'bg-[#2773E4] text-white hover:bg-[#1f65cf] focus:ring-blue-300',
     secondary: 'bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 focus:ring-slate-200',
     danger: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-300',
     ghost: 'bg-transparent text-slate-600 hover:bg-slate-100 focus:ring-slate-200',
@@ -104,7 +104,7 @@ export function Badge({ active, labels }: { active: boolean; labels?: [string, s
     return (
         <span
             className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                active ? 'bg-green-100 text-green-800' : 'bg-slate-100 text-slate-600'
+                active ? 'bg-blue-100 text-blue-800' : 'bg-slate-100 text-slate-600'
             }`}
         >
             {active ? on : off}

@@ -17,11 +17,11 @@ export default function Login() {
     }
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-green-50 via-slate-50 to-white px-4 py-10">
+        <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 via-slate-50 to-white px-4 py-10">
             <Head title="เข้าสู่ระบบ" />
             <div className="w-full max-w-sm">
                 <div className="mb-6 text-center">
-                    <h1 className="text-2xl font-bold text-green-700">AI Knowledge</h1>
+                    <h1 className="text-2xl font-bold text-[#2773E4]">AI Knowledge</h1>
                     <p className="mt-1 text-sm text-slate-500">จัดการข้อมูลที่ AI ใช้ตอบลูกค้า</p>
                 </div>
                 <form onSubmit={submit} className="space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-lg shadow-slate-200/60">

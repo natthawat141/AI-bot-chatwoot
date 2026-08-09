@@ -38,7 +38,7 @@ export default function Pagination<T>({ paginator }: { paginator: Paginated<T> }
                             preserveScroll
                             preserveState
                             className={`rounded-md px-3 py-1.5 ${
-                                link.active ? 'bg-green-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'
+                                link.active ? 'bg-[#2773E4] text-white' : 'bg-white text-slate-600 hover:bg-slate-100'
                             }`}
                             dangerouslySetInnerHTML={{ __html: label }}
                         />
