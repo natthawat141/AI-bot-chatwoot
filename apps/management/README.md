@@ -1,4 +1,4 @@
-# AI Knowledge Management
+# Aion3 Knowledge Management
 
 A low-cost, single-deploy **Laravel modular monolith** that manages business packages, FAQs,
 and free-form knowledge entries. It exposes a small authenticated **read API** for the Python
@@ -49,7 +49,7 @@ php artisan key:generate
 Then edit `.env`:
 
 ```dotenv
-APP_NAME="AI Knowledge"
+APP_NAME="Aion3 Knowledge Management"
 APP_URL=http://localhost:8000
 
 DB_CONNECTION=mysql

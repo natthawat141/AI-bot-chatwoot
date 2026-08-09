@@ -17,14 +17,14 @@ export default function Login() {
     }
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-zinc-950 px-4 py-10">
+        <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-10">
             <Head title="เข้าสู่ระบบ" />
             <div className="w-full max-w-sm">
                 <div className="mb-6 text-center">
-                    <h1 className="text-2xl font-semibold tracking-tight text-zinc-100">AI Knowledge</h1>
+                    <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">Aion3 Knowledge Management</h1>
                     <p className="mt-1 text-sm text-slate-500">จัดการข้อมูลที่ AI ใช้ตอบลูกค้า</p>
                 </div>
-                <form onSubmit={submit} className="space-y-4 rounded-lg border border-zinc-800 bg-zinc-900 p-6 shadow-2xl shadow-black/20">
+                <form onSubmit={submit} className="space-y-4 rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
                     <div>
                         <h2 className="font-semibold text-slate-900">เข้าสู่ระบบผู้ดูแล</h2>
                         <p className="mt-1 text-xs text-slate-500">กรอกบัญชีที่ได้รับเพื่อจัดการข้อมูลในระบบ</p>
@@ -58,7 +58,6 @@ export default function Login() {
                         เข้าสู่ระบบ
                     </Button>
                 </form>
-                <p className="mt-5 text-center text-xs text-slate-400">Bill Natthawat × Aion3</p>
             </div>
         </div>
     );

@@ -13,7 +13,7 @@
 
 html {
     -webkit-text-size-adjust: 100%;
-    color-scheme: dark;
+    color-scheme: light;
 }
 
 html,
@@ -24,74 +24,6 @@ body,
 
 body {
     margin: 0;
-    background: #09090b;
-    color: #e4e4e7;
-}
-
-/*
- * Management uses a quiet, Notion-like dark surface. The application already
- * shares Tailwind utility classes across every page, so these token adapters
- * keep the existing component vocabulary consistent without duplicating dark
- * variants in every template.
- */
-[class~='bg-white'],
-[class~='bg-white\/90'] {
-    background-color: #18181b !important;
-}
-
-[class~='bg-slate-50'] {
-    background-color: #101012 !important;
-}
-
-[class~='bg-slate-100'] {
-    background-color: #202023 !important;
-}
-
-[class~='bg-slate-200'] {
-    background-color: #2a2a2e !important;
-}
-
-[class~='border-slate-100'] {
-    border-color: #242428 !important;
-}
-
-[class~='border-slate-200'] {
-    border-color: #2f2f34 !important;
-}
-
-[class~='border-slate-300'] {
-    border-color: #414149 !important;
-}
-
-[class~='text-slate-900'],
-[class~='text-slate-800'] {
-    color: #f4f4f5 !important;
-}
-
-[class~='text-slate-700'] {
-    color: #d4d4d8 !important;
-}
-
-[class~='text-slate-600'] {
-    color: #b4b4bc !important;
-}
-
-[class~='text-slate-500'] {
-    color: #92929d !important;
-}
-
-[class~='text-slate-400'] {
-    color: #71717a !important;
-}
-
-[class~='text-slate-300'] {
-    color: #52525b !important;
-}
-
-[class~='hover:bg-slate-50']:hover {
-    background-color: #202023 !important;
-}
-
-[class~='hover:bg-slate-100']:hover {
-    background-color: #27272a !important;
+    background: #f8fafc;
+    color: #1e293b;
 }

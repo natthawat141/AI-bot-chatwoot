@@ -84,7 +84,7 @@ export default function AdminLayout({ title, actions, children }: { title: strin
     const sidebar = (
         <nav className="flex h-full flex-col gap-1 p-3">
             <div className="px-3 py-4">
-                <p className="text-lg font-semibold tracking-tight text-zinc-100">AI Knowledge</p>
+                <p className="text-lg font-semibold tracking-tight text-zinc-900">Aion3 Knowledge Management</p>
                 <p className="text-xs text-slate-500">จัดการข้อมูลที่ AI ใช้ตอบ</p>
             </div>
             {nav.map((item) => {
@@ -96,7 +96,7 @@ export default function AdminLayout({ title, actions, children }: { title: strin
                         onClick={() => setOpen(false)}
                         className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition ${
                             isActive(item.match)
-                                ? 'bg-zinc-100 text-zinc-950'
+                                ? 'bg-zinc-900 text-white'
                                 : 'text-slate-600 hover:bg-slate-100'
                         }`}
                     >
@@ -145,20 +145,6 @@ export default function AdminLayout({ title, actions, children }: { title: strin
 
                 <main className="mx-auto w-full max-w-[1440px] flex-1 px-4 py-6 lg:px-8">{children}</main>
 
-                <footer className="border-t border-slate-200 bg-white px-4 py-4 text-sm text-slate-600 lg:px-8">
-                    <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                        <p>
-                            หากระบบมีปัญหา ติดต่อผู้สร้าง{' '}
-                            <a
-                                href="mailto:bill.natthawat@gmail.com"
-                                className="font-medium text-zinc-100 underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-400"
-                            >
-                                bill.natthawat@gmail.com
-                            </a>
-                        </p>
-                        <p className="text-xs text-slate-500">Bill Natthawat × Aion3</p>
-                    </div>
-                </footer>
             </div>
         </div>
     );

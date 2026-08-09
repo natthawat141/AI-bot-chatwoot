@@ -101,7 +101,7 @@ export default function ApiTokensIndex({ tokens, newToken }: Props) {
             <Card className="mb-6 p-5 lg:p-6">
                 <div className="mb-5">
                     <h2 className="text-base font-semibold text-slate-900">สร้างโทเคนใหม่</h2>
-                    <p className="mt-1 text-sm text-slate-500">ใช้สำหรับเชื่อมระบบภายนอกเพื่ออ่านข้อมูลจาก AI Knowledge</p>
+                    <p className="mt-1 text-sm text-slate-500">ใช้สำหรับเชื่อมระบบภายนอกเพื่ออ่านข้อมูลจาก Aion3 Knowledge Management</p>
                 </div>
                 <form onSubmit={submit} className="grid gap-4 md:grid-cols-2">
                     <Field label="ชื่อโทเคน" required error={errors.name}>

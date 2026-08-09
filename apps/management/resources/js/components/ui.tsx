@@ -67,7 +67,7 @@ export function Toggle({
                 type="checkbox"
                 checked={checked}
                 onChange={(e) => onChange(e.target.checked)}
-                className="h-4 w-4 rounded border-slate-300 text-zinc-100 focus:ring-zinc-400"
+                className="h-4 w-4 rounded border-slate-300 accent-zinc-900 focus:ring-zinc-400"
             />
             <span className="text-sm text-slate-700">{label}</span>
         </label>
@@ -77,7 +77,7 @@ export function Toggle({
 type Variant = 'primary' | 'secondary' | 'danger' | 'ghost';
 
 const variants: Record<Variant, string> = {
-    primary: 'bg-zinc-100 text-zinc-950 hover:bg-white focus:ring-zinc-500',
+    primary: 'bg-zinc-900 text-zinc-50 hover:bg-zinc-700 focus:ring-zinc-400',
     secondary: 'border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 focus:ring-slate-200',
     danger: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-300',
     ghost: 'bg-transparent text-slate-600 hover:bg-slate-100 focus:ring-slate-200',
