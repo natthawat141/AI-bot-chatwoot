@@ -14,6 +14,24 @@ SPEC.md                 สเปก Version 1
 
 สถาปัตยกรรมระบบฉบับเต็ม: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 
+## Architecture
+
+```mermaid
+flowchart LR
+    customer["Customer\nLINE / Web"] --> caddy["Caddy\nHTTPS"]
+    caddy --> chatwoot["Chatwoot\nConversation owner"]
+    chatwoot --> webhook["AI Webhook\nFastAPI"]
+    webhook --> queue[("Redis queue")]
+    queue --> worker["AI Worker"]
+    worker --> management["Laravel Management\nKnowledge API"]
+    management --> mysql[("Management MySQL")]
+    worker --> model["OpenRouter\nLLM"]
+    worker -->|reply or human handoff| chatwoot
+    admin["Business admin"] --> management
+```
+
+แผนภาพฉบับเต็มพร้อมขอบเขตข้อมูล การ handoff และ topology สำหรับ deploy อยู่ที่ [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+
 สิ่งที่ไม่นำมาจาก Starter Edition คือ direct LINE webhook เดิม, `vendor`, `node_modules`, build output, rich-menu assets และชุด deploy/observability เก่า
 
 ## รันทั้งระบบด้วย Docker Compose
