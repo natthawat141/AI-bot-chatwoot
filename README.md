@@ -12,6 +12,8 @@ AGENTS.md               กติกาการพัฒนา
 SPEC.md                 สเปก Version 1
 ```
 
+สถาปัตยกรรมระบบฉบับเต็ม: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+
 สิ่งที่ไม่นำมาจาก Starter Edition คือ direct LINE webhook เดิม, `vendor`, `node_modules`, build output, rich-menu assets และชุด deploy/observability เก่า
 
 ## รันทั้งระบบด้วย Docker Compose

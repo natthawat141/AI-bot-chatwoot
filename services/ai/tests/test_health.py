@@ -20,6 +20,44 @@ def test_chatwoot_webhook_fails_closed() -> None:
     assert response.json() == {"detail": {"code": "invalid_webhook"}}
 
 
+def test_chatwoot_webhook_enqueues_authenticated_event(monkeypatch) -> None:
+    class FakeQueue:
+        def __init__(self) -> None:
+            self.items: list[tuple[str, str]] = []
+
+        async def rpush(self, key: str, value: str) -> None:
+            self.items.append((key, value))
+
+        async def aclose(self) -> None:
+            return None
+
+    monkeypatch.setenv("CHATWOOT_WEBHOOK_TOKEN", "test-secret")
+    monkeypatch.setenv("AI_SERVICE_TOKEN", "management-token")
+    monkeypatch.setenv("CHATWOOT_API_TOKEN", "chatwoot-token")
+    with TestClient(app) as test_client:
+        queue = FakeQueue()
+        app.state.queue = queue
+        response = test_client.post("/webhooks/chatwoot/test-secret", json={"event": "message_created"})
+
+    assert response.status_code == 202
+    assert response.json() == {"status": "accepted"}
+    assert len(queue.items) == 1
+
+
+def test_chatwoot_webhook_rejects_invalid_path_token(monkeypatch) -> None:
+    monkeypatch.setenv("CHATWOOT_WEBHOOK_TOKEN", "test-secret")
+    response = client.post("/webhooks/chatwoot/wrong-secret", json={"event": "message_created"})
+
+    assert response.status_code == 401
+
+
+def test_chatwoot_webhook_does_not_accept_query_string_tokens(monkeypatch) -> None:
+    monkeypatch.setenv("CHATWOOT_WEBHOOK_TOKEN", "test-secret")
+    response = client.post("/webhooks/chatwoot?token=test-secret", json={"event": "message_created"})
+
+    assert response.status_code == 401
+
+
 def test_catalog_filters_extract_only_allowlisted_values() -> None:
     filters = catalog_filters("คอนโด 2 ห้องนอน งบไม่เกิน 4 ล้านบาท แถวบางนา")
 

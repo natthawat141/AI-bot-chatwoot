@@ -10,6 +10,7 @@ import logging
 import os
 import re
 import time
+from collections import OrderedDict
 from collections.abc import Mapping
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
@@ -17,11 +18,16 @@ from typing import Any
 
 import httpx
 from fastapi import FastAPI, HTTPException, Request, status
+from redis import asyncio as redis_async
+from redis.exceptions import RedisError
 
 LOG = logging.getLogger("ai_service")
 HANDOFF_TERMS = ("เจ้าหน้าที่", "พนักงาน", "คน", "human", "agent", "ร้องเรียน", "ต่อรอง", "ชำระ", "จ่ายเงิน", "refund")
 CATALOG_TERMS = ("คอนโด", "ที่ดิน", "บ้าน", "อสังหา", "เช่า", "ขาย", "ราคา", "แพ็กเกจ", "สินค้า", "บริการ")
-CONVERSATION_LOCKS: dict[str, asyncio.Lock] = {}
+QUEUE_KEY = "aibot:chatwoot:webhooks:v1"
+DEAD_LETTER_QUEUE_KEY = "aibot:chatwoot:webhooks:dead:v1"
+MAX_CONVERSATION_LOCKS = 10_000
+CONVERSATION_LOCKS: OrderedDict[str, asyncio.Lock] = OrderedDict()
 
 
 @dataclass(frozen=True)
@@ -36,6 +42,7 @@ class Settings:
     openrouter_api_key: str
     openrouter_model: str
     allowed_inbox_ids: frozenset[int]
+    redis_url: str
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -60,6 +67,7 @@ class Settings:
             openrouter_api_key=os.getenv("OPENROUTER_API_KEY", ""),
             openrouter_model=os.getenv("OPENROUTER_MODEL", "deepseek/deepseek-v4-flash-0731"),
             allowed_inbox_ids=frozenset(inboxes),
+            redis_url=os.getenv("AI_QUEUE_REDIS_URL", os.getenv("REDIS_URL", "")).strip(),
         )
 
 
@@ -202,6 +210,27 @@ def compact_records(records: list[dict[str, Any]]) -> str:
     return json.dumps(records, ensure_ascii=False, separators=(",", ":"))[:12000]
 
 
+def conversation_lock(key: str) -> asyncio.Lock:
+    """Return a bounded per-conversation lock map for this worker process."""
+    lock = CONVERSATION_LOCKS.get(key)
+    if lock is None:
+        lock = asyncio.Lock()
+        CONVERSATION_LOCKS[key] = lock
+    CONVERSATION_LOCKS.move_to_end(key)
+    if len(CONVERSATION_LOCKS) > MAX_CONVERSATION_LOCKS:
+        for old_key, old_lock in list(CONVERSATION_LOCKS.items()):
+            if not old_lock.locked() and old_key != key:
+                CONVERSATION_LOCKS.pop(old_key, None)
+                break
+    return lock
+
+
+async def enqueue_webhook(queue: Any, payload: Mapping[str, Any]) -> None:
+    if queue is None:
+        raise UpstreamError("queue_not_configured")
+    await queue.rpush(QUEUE_KEY, json.dumps(dict(payload), ensure_ascii=False, separators=(",", ":")))
+
+
 async def grounded_answer(settings: Settings, client: httpx.AsyncClient, question: str, records: list[dict[str, Any]]) -> str | None:
     if not settings.openrouter_api_key:
         return None
@@ -241,7 +270,7 @@ async def process(settings: Settings, payload: Mapping[str, Any], client: httpx.
     if message_type not in {"incoming", "0", ""}:
         LOG.info("ignored_event account=%s conversation=%s reason=direction", account_id, conversation_id)
         return
-    lock = CONVERSATION_LOCKS.setdefault(f"{account_id}:{conversation_id}", asyncio.Lock())
+    lock = conversation_lock(f"{account_id}:{conversation_id}")
     async with lock:
         started = time.monotonic()
         chatwoot, management = ChatwootClient(settings, client), ManagementClient(settings, client)
@@ -276,13 +305,20 @@ async def process(settings: Settings, payload: Mapping[str, Any], client: httpx.
             LOG.info("answer account=%s conversation=%s action=%s duration_ms=%d", account_id, conversation_id, "catalog" if is_catalog(content) else "knowledge", int((time.monotonic() - started) * 1000))
         except UpstreamError as exc:
             LOG.warning("retryable_failure account=%s conversation=%s upstream=%s", account_id, conversation_id, str(exc))
+            raise
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     app.state.http = httpx.AsyncClient()
-    yield
-    await app.state.http.aclose()
+    queue_url = Settings.from_env().redis_url
+    app.state.queue = redis_async.from_url(queue_url, decode_responses=True) if queue_url else None
+    try:
+        yield
+    finally:
+        await app.state.http.aclose()
+        if app.state.queue is not None:
+            await app.state.queue.aclose()
 
 
 app = FastAPI(title="AI Bot Chatwoot Service", version="1.0.0", docs_url=None, redoc_url=None, lifespan=lifespan)
@@ -291,13 +327,20 @@ app = FastAPI(title="AI Bot Chatwoot Service", version="1.0.0", docs_url=None, r
 @app.get("/health")
 async def health() -> dict[str, str]:
     configured = Settings.from_env()
-    return {"status": "ok", "mode": "ready" if configured.webhook_token and configured.management_token and configured.chatwoot_bot_token else "configuration_required"}
+    queue_ready = bool(configured.redis_url)
+    queue = getattr(app.state, "queue", None)
+    if queue is not None:
+        try:
+            await queue.ping()
+        except RedisError:
+            queue_ready = False
+    ready = configured.webhook_token and configured.management_token and configured.chatwoot_bot_token and queue_ready
+    return {"status": "ok", "mode": "ready" if ready else "configuration_required"}
 
 
-@app.post("/webhooks/chatwoot", status_code=status.HTTP_202_ACCEPTED)
-async def chatwoot_webhook(request: Request) -> dict[str, str]:
+async def receive_chatwoot_webhook(request: Request, supplied_path_token: str = "") -> dict[str, str]:
     settings = Settings.from_env()
-    supplied = request.query_params.get("token", "")
+    supplied = request.headers.get("x-chatwoot-webhook-token", "") or supplied_path_token
     if not settings.webhook_token or not hmac.compare_digest(supplied, settings.webhook_token):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail={"code": "invalid_webhook"})
     try:
@@ -308,5 +351,19 @@ async def chatwoot_webhook(request: Request) -> dict[str, str]:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={"code": "invalid_payload"})
     if not settings.management_token or not settings.chatwoot_bot_token:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail={"code": "not_configured"})
-    asyncio.create_task(process(settings, payload, request.app.state.http))
+    try:
+        await enqueue_webhook(request.app.state.queue, payload)
+    except (RedisError, UpstreamError) as exc:
+        LOG.error("queue_failure error=%s", type(exc).__name__)
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail={"code": "queue_unavailable"}) from exc
     return {"status": "accepted"}
+
+
+@app.post("/webhooks/chatwoot", status_code=status.HTTP_202_ACCEPTED, include_in_schema=False)
+async def chatwoot_webhook_legacy(request: Request) -> dict[str, str]:
+    return await receive_chatwoot_webhook(request)
+
+
+@app.post("/webhooks/chatwoot/{path_token}", status_code=status.HTTP_202_ACCEPTED, include_in_schema=False)
+async def chatwoot_webhook(request: Request, path_token: str) -> dict[str, str]:
+    return await receive_chatwoot_webhook(request, path_token)

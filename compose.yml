@@ -178,6 +178,24 @@ services:
       retries: 6
     restart: unless-stopped
 
+  ai-worker:
+    build:
+      context: ./services/ai
+    env_file:
+      - .env
+      - ./runtime/openrouter.env
+      - ./runtime/chatwoot_bot.env
+    environment:
+      MANAGEMENT_BASE_URL: http://management-nginx
+      CHATWOOT_BASE_URL: http://chatwoot-rails:3000
+    depends_on:
+      management-nginx:
+        condition: service_started
+      chatwoot-rails:
+        condition: service_started
+    command: ["python", "-m", "ai_service.worker"]
+    restart: unless-stopped
+
 volumes:
   caddy_data:
   caddy_config:

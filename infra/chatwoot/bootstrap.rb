@@ -45,7 +45,7 @@ TeamMember.find_or_create_by!(team_id: team.id, user_id: service_user.id)
 service_access_token = service_user.access_token || service_user.create_access_token
 
 webhook_token = ENV.fetch('CHATWOOT_WEBHOOK_TOKEN')
-outgoing_url = "http://ai:8000/webhooks/chatwoot?token=#{ERB::Util.url_encode(webhook_token)}"
+outgoing_url = "http://ai:8000/webhooks/chatwoot/#{ERB::Util.url_encode(webhook_token)}"
 bot = AgentBot.find_or_initialize_by(account: account, name: ENV.fetch('CHATWOOT_AGENT_BOT_NAME', 'Business AI'))
 bot.outgoing_url = outgoing_url
 bot.description = 'Business AI orchestrator; Chatwoot remains the conversation owner.'
