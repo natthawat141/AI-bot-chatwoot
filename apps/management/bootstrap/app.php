@@ -15,6 +15,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Caddy terminates public TLS before forwarding to Nginx/PHP-FPM.
+        // Trust its forwarded scheme so generated Vite asset URLs remain HTTPS.
+        $middleware->trustProxies(at: '*');
+
         // Inertia shares auth/flash state with every web response.
         $middleware->web(append: [
             HandleInertiaRequests::class,
