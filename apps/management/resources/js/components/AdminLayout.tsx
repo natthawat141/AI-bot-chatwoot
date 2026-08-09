@@ -84,7 +84,12 @@ export default function AdminLayout({ title, actions, children }: { title: strin
     const sidebar = (
         <nav className="flex h-full flex-col gap-1 p-3">
             <div className="px-3 py-4">
-                <p className="text-lg font-semibold tracking-tight text-zinc-900">Aion3 Knowledge Management</p>
+                <img
+                    src="/img/aionelogo.jpeg"
+                    alt="Aion3"
+                    className="h-12 w-auto max-w-full object-contain object-left"
+                />
+                <p className="mt-1 text-sm font-semibold tracking-tight text-zinc-900">Knowledge Management</p>
                 <p className="text-xs text-slate-500">จัดการข้อมูลที่ AI ใช้ตอบ</p>
             </div>
             {nav.map((item) => {
