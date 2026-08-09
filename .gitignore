@@ -1,57 +1,27 @@
-# ── Secrets — never commit ─────────────────────────────────────────────
+# macOS metadata
+.DS_Store
+._*
+
+# Local environment and secrets
 .env
 .env.*
+runtime/
 !.env.example
-!.env.management.example
-!.env.prod.example
-.env.management
-.mcp.json
-.n8n_token
-**/auth.json
-**/*.key
 
-# ── Python (line-bot-service) ──────────────────────────────────────────
-**/.venv/
-**/__pycache__/
-**/*.pyc
-**/.pytest_cache/
-**/.mypy_cache/
+# Dependencies and build output
+vendor/
+node_modules/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.venv/
+dist/
+build/
+public/build/
 
-# ── PHP / Laravel (line-bot-management) ────────────────────────────────
-**/vendor/
-**/node_modules/
-**/public/build/
-**/public/hot
-**/public/storage
-**/storage/*.key
-**/storage/logs/*.log
-**/storage/framework/cache/data/*
-**/storage/framework/sessions/*
-**/storage/framework/views/*
-**/bootstrap/cache/*.php
-**/*.sqlite
-**/*.sqlite-journal
-**/.phpunit.result.cache
-
-# ── OS / editor junk ───────────────────────────────────────────────────
-.DS_Store
-Thumbs.db
-.idea/
-.vscode/
-*.swp
-
-# ── Build / local artifacts ────────────────────────────────────────────
-*.log
-
-# ── Not product code — excluded from the public demo repo ──────────────
-# (Remove any line here if you DO want it published.)
-/standard-line-bot/
-/quotation.html
-/quotation.md
-/.claude/
-/.agents/
-/.codex/
-/.codex-remote-attachments/
-# Rich menu / branding images — keep out of the public repo (design assets only).
-/rich-menu-assets/*.png
-/rich-menu-assets/*.jpg
+# Runtime data
+*.sqlite
+storage/logs/*
+!storage/logs/.gitignore

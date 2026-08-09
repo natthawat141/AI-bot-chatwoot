@@ -1,0 +1,189 @@
+name: ai-bot-chatwoot
+
+x-chatwoot: &chatwoot
+  image: chatwoot/chatwoot:${CHATWOOT_VERSION}
+  env_file: .env
+  volumes:
+    - chatwoot_storage:/app/storage
+  restart: unless-stopped
+
+services:
+  caddy:
+    image: caddy:2.10-alpine
+    env_file: .env
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./infra/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      management-nginx:
+        condition: service_started
+      chatwoot-rails:
+        condition: service_started
+    restart: unless-stopped
+
+  chatwoot-rails:
+    <<: *chatwoot
+    depends_on:
+      chatwoot-postgres:
+        condition: service_healthy
+      chatwoot-redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      RAILS_ENV: production
+      INSTALLATION_ENV: docker
+      LOG_LEVEL: warn
+    entrypoint: docker/entrypoints/rails.sh
+    command: ["bundle", "exec", "rails", "s", "-p", "3000", "-b", "0.0.0.0"]
+
+  chatwoot-sidekiq:
+    <<: *chatwoot
+    depends_on:
+      chatwoot-postgres:
+        condition: service_healthy
+      chatwoot-redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      RAILS_ENV: production
+      INSTALLATION_ENV: docker
+      LOG_LEVEL: warn
+    command: ["bundle", "exec", "sidekiq", "-C", "config/sidekiq.yml"]
+
+  chatwoot-bootstrap:
+    <<: *chatwoot
+    depends_on:
+      chatwoot-rails:
+        condition: service_started
+      chatwoot-postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      RAILS_ENV: production
+      INSTALLATION_ENV: docker
+      LOG_LEVEL: warn
+    volumes:
+      - chatwoot_storage:/app/storage
+      - ./infra/chatwoot/bootstrap.rb:/bootstrap.rb:ro
+      - ./runtime:/runtime
+    command: ["bundle", "exec", "rails", "runner", "/bootstrap.rb"]
+    restart: "no"
+
+  chatwoot-postgres:
+    image: pgvector/pgvector:pg16
+    env_file: .env
+    environment:
+      POSTGRES_DB: ${CHATWOOT_POSTGRES_DATABASE}
+      POSTGRES_USER: ${CHATWOOT_POSTGRES_USERNAME}
+      POSTGRES_PASSWORD: ${CHATWOOT_POSTGRES_PASSWORD}
+    volumes:
+      - chatwoot_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+
+  chatwoot-redis:
+    image: redis:7.4-alpine
+    env_file: .env
+    command: ["sh", "-c", "redis-server --appendonly yes --requirepass \"$${CHATWOOT_REDIS_PASSWORD}\""]
+    volumes:
+      - chatwoot_redis:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$${CHATWOOT_REDIS_PASSWORD}\" ping | grep PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+
+  management-php:
+    build:
+      context: ./apps/management
+    env_file: .env
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+      DB_CONNECTION: mysql
+      DB_HOST: management-mysql
+      DB_PORT: 3306
+      DB_DATABASE: ${MANAGEMENT_DB_DATABASE}
+      DB_USERNAME: ${MANAGEMENT_DB_USERNAME}
+      DB_PASSWORD: ${MANAGEMENT_DB_PASSWORD}
+      CACHE_STORE: database
+      SESSION_DRIVER: database
+      QUEUE_CONNECTION: database
+      RUN_MIGRATIONS: "true"
+      SEED_ON_START: "true"
+    depends_on:
+      management-mysql:
+        condition: service_healthy
+    volumes:
+      - management_storage:/var/www/html/storage
+      - management_public:/shared-public
+    restart: unless-stopped
+
+  management-nginx:
+    image: nginx:1.27-alpine
+    depends_on:
+      management-php:
+        condition: service_started
+    volumes:
+      - ./infra/management/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - management_public:/var/www/html/public:ro
+    restart: unless-stopped
+
+  management-mysql:
+    image: mysql:8.4
+    env_file: .env
+    command: ["mysqld", "--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
+    environment:
+      MYSQL_DATABASE: ${MANAGEMENT_DB_DATABASE}
+      MYSQL_USER: ${MANAGEMENT_DB_USERNAME}
+      MYSQL_PASSWORD: ${MANAGEMENT_DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MANAGEMENT_DB_ROOT_PASSWORD}
+    volumes:
+      - management_mysql:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u$${MYSQL_USER} -p$${MYSQL_PASSWORD} --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+    restart: unless-stopped
+
+  ai:
+    build:
+      context: ./services/ai
+    env_file:
+      - .env
+      - ./runtime/openrouter.env
+      - ./runtime/chatwoot_bot.env
+    environment:
+      MANAGEMENT_BASE_URL: http://management-nginx
+      CHATWOOT_BASE_URL: http://chatwoot-rails:3000
+    depends_on:
+      management-nginx:
+        condition: service_started
+      chatwoot-rails:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"]
+      interval: 20s
+      timeout: 5s
+      retries: 6
+    restart: unless-stopped
+
+volumes:
+  caddy_data:
+  caddy_config:
+  chatwoot_storage:
+  chatwoot_postgres:
+  chatwoot_redis:
+  management_storage:
+  management_public:
+  management_mysql:

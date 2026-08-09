@@ -1,0 +1,9 @@
+{$CHATWOOT_HOSTNAME} {
+    encode zstd gzip
+    reverse_proxy chatwoot-rails:3000
+}
+
+{$MANAGEMENT_HOSTNAME} {
+    encode zstd gzip
+    reverse_proxy management-nginx:80
+}

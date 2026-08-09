@@ -1,62 +1,54 @@
-# LINE AI Package-Info Bot
+# AI-bot-chatwoot
 
-LINE Official Account bot that answers customer questions from live,
-admin-managed data — packages, prices, promotions, and FAQs — grounded on
-real records, never guessed.
+Monorepo สำหรับระบบ AI สนทนาธุรกิจเดียวผ่าน LINE และ WhatsApp โดยใช้ Chatwoot เป็นเจ้าของบทสนทนา และ Laravel Management เป็นเจ้าของข้อมูลธุรกิจ
 
-## What it does
+## โครงสร้าง
 
-A customer messages the LINE Official Account. The bot answers in natural
-Thai, grounded only on active, published, in-window records managed by a
-non-technical admin through a web UI. No supported record → the bot says so
-and points to a human contact, instead of making something up.
-
-```
-LINE user -> LINE Messaging API -> line-bot-service (FastAPI)
-                                        |  webhook, signature check, dedup
-                                        |  OpenRouter (LLM) for natural replies
-                                        v
-                                 line-bot-management (Laravel/Filament)
-                                        |  admin CRUD, Excel import/export
-                                        |  read-only Knowledge API (bearer token)
-                                        v
-                                      MySQL
+```text
+apps/management/       Laravel Management และ Knowledge API
+services/ai/           Python AI orchestrator สำหรับ Chatwoot
+infra/chatwoot/        Chatwoot web/worker, PostgreSQL และ Redis
+AGENTS.md               กติกาการพัฒนา
+SPEC.md                 สเปก Version 1
 ```
 
-## Repository layout
+สิ่งที่ไม่นำมาจาก Starter Edition คือ direct LINE webhook เดิม, `vendor`, `node_modules`, build output, rich-menu assets และชุด deploy/observability เก่า
 
-| Path | What |
-|---|---|
-| `line-bot-service/` | FastAPI bot — LINE webhook, OpenRouter, knowledge grounding, Flex messages |
-| `line-bot-management/` | Laravel/Filament — admin CRUD, Excel import/export, Knowledge read API, analytics sink |
-| `deploy/` | nginx config, observability stack config, VM bootstrap script |
-| `docker-compose.yml` | Local demo stack (SQLite, single command) |
-| `docker-compose.prod.yml` | Production stack (MySQL, nginx, monitoring) |
-
-## Quick start (local demo)
+## รันทั้งระบบด้วย Docker Compose
 
 ```bash
-cp line-bot-service/.env.example line-bot-service/.env               # fill LINE + OpenRouter secrets
-cp line-bot-service/.env.management.example line-bot-service/.env.management
-docker compose up -d --build
+cp .env.example .env
+# ใส่ค่าลับ/โดเมนตามสภาพแวดล้อม และเก็บไฟล์นี้ไว้นอก git
+docker compose up -d
 ```
 
-- Bot health: `http://localhost:8080/health`
-- Admin: `http://localhost:8001`
+Compose จะเริ่ม Caddy, Chatwoot Rails/Sidekiq, PostgreSQL, Redis, Laravel Management และ AI orchestrator พร้อมกัน
+โดย `chatwoot-bootstrap` จะสร้าง account, ทีม handoff, Agent Bot และ service API token แบบ idempotent
 
-## Production deploy
+สำหรับ VM ใหม่ใช้ `infra/deploy/bootstrap-vm.sh` เพื่อสร้าง `.env` และรัน migration/seed อัตโนมัติ
+ค่า OpenRouter ควรฉีดผ่าน secret manager ลง `runtime/openrouter.env` (mode 600) ไม่เขียนลง source
 
-See [`deploy/README.md`](deploy/README.md) for the full single-VM playbook
-(provision → secrets → `docker compose -f docker-compose.prod.yml up -d --build`
-→ point the LINE webhook at your domain).
+## Laravel Management
 
-## Documentation
+```bash
+cd apps/management
+composer install
+npm install
+php artisan test
+npm run build
+```
 
-- [Architecture & status](line-bot-management/docs/ARCHITECTURE.md)
-- [Product brief](line-bot-management/PRODUCT.md)
-- [LINE OA setup + AI-assisted management guide (TH)](line-bot-service/docs/LINE_OA_AI_SETUP_GUIDE_TH.md)
-- [Flex Message carousel guide (TH)](line-bot-service/docs/FLEX_CAROUSEL_GUIDE_TH.md)
+## Python AI service
 
-## License
+```bash
+cd services/ai
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e '.[dev]'
+pytest
+uvicorn ai_service.main:app --reload
+```
 
-Proprietary — see [LICENSE](LICENSE). Visible for demonstration purposes only.
+ก่อนเปิด channel จริง ให้ตั้ง `LINE_CHANNEL_ID`, `LINE_CHANNEL_SECRET` และ `LINE_CHANNEL_ACCESS_TOKEN`
+ใน runtime environment แล้วรัน `docker compose up -d chatwoot-bootstrap ai` อีกครั้ง
+จากนั้นจึงนำ Chatwoot inbox webhook URL ไปตั้งใน LINE Developers หรือช่องทางที่เลือก
