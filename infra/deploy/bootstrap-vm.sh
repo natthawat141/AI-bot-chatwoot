@@ -12,7 +12,7 @@ if [[ -f .env ]]; then
   exit 0
 fi
 
-required=(CHATWOOT_HOSTNAME MANAGEMENT_HOSTNAME)
+required=(CHATWOOT_HOSTNAME MANAGEMENT_HOSTNAME AI_HOSTNAME)
 for name in "${required[@]}"; do
   if [[ -z "${!name:-}" ]]; then
     echo "missing required deployment setting: $name" >&2
@@ -34,6 +34,7 @@ cat > .env <<EOF
 CHATWOOT_VERSION=v4.16.2-ce
 CHATWOOT_HOSTNAME=${CHATWOOT_HOSTNAME}
 MANAGEMENT_HOSTNAME=${MANAGEMENT_HOSTNAME}
+AI_HOSTNAME=${AI_HOSTNAME}
 FRONTEND_URL=https://${CHATWOOT_HOSTNAME}
 SECRET_KEY_BASE=$(secret)
 RAILS_ENV=production

@@ -45,7 +45,12 @@ TeamMember.find_or_create_by!(team_id: team.id, user_id: service_user.id)
 service_access_token = service_user.access_token || service_user.create_access_token
 
 webhook_token = ENV.fetch('CHATWOOT_WEBHOOK_TOKEN')
-outgoing_url = "http://ai:8000/webhooks/chatwoot/#{ERB::Util.url_encode(webhook_token)}"
+ai_hostname = ENV.fetch('AI_HOSTNAME', '').strip
+if ai_hostname.present?
+  outgoing_url = "https://#{ai_hostname}/webhooks/chatwoot/#{ERB::Util.url_encode(webhook_token)}"
+else
+  outgoing_url = "http://ai:8000/webhooks/chatwoot/#{ERB::Util.url_encode(webhook_token)}"
+end
 bot = AgentBot.find_or_initialize_by(account: account, name: ENV.fetch('CHATWOOT_AGENT_BOT_NAME', 'Business AI'))
 bot.outgoing_url = outgoing_url
 bot.description = 'Business AI orchestrator; Chatwoot remains the conversation owner.'
@@ -65,6 +70,7 @@ if line_id.present? && line_secret.present? && line_token.present?
     record.enable_auto_assignment = false
   end
   inbox.update!(enable_auto_assignment: false)
+  InboxMember.find_or_create_by!(inbox: inbox, user: service_user)
   AgentBotInbox.find_or_create_by!(account: account, agent_bot: bot, inbox: inbox) { |record| record.status = :active }
 end
 

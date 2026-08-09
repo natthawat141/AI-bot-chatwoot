@@ -79,6 +79,9 @@ messages are not written to application logs.
 ## Deployment topology
 
 All services run in one Docker Compose stack on the development VM. Caddy is the only public
-entry point. Chatwoot, Management, AI API, and the AI Worker communicate over the private
+entry point. Chatwoot and Management keep their public hostnames, while the AI webhook has a
+separate public HTTPS hostname because Chatwoot rejects private Compose hostnames for Agent Bot
+webhooks. Caddy forwards that hostname privately to the AI API; the webhook still requires the
+secret path token. Chatwoot, Management, AI API, and the AI Worker communicate over the private
 Compose network. Persistent state is held in named volumes for Chatwoot PostgreSQL/Redis,
 Management MySQL, and Chatwoot storage.

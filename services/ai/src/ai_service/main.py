@@ -203,7 +203,11 @@ def is_ai_eligible(conversation: Mapping[str, Any], settings: Settings) -> bool:
     if settings.allowed_inbox_ids and inbox not in settings.allowed_inbox_ids:
         return False
     assignee = conversation.get("assignee") or nested(conversation, "meta", "assignee")
-    return not isinstance(assignee, Mapping) and not isinstance(conversation.get("assignee_id"), int)
+    if isinstance(assignee, Mapping):
+        # Chatwoot exposes the assigned Agent Bot under meta.assignee. It is not a
+        # human owner and must remain eligible for the next customer message.
+        return str(assignee.get("bot_type", "")) == "webhook"
+    return not isinstance(conversation.get("assignee_id"), int)
 
 
 def compact_records(records: list[dict[str, Any]]) -> str:

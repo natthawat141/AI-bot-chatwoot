@@ -1,6 +1,6 @@
 from fastapi.testclient import TestClient
 
-from ai_service.main import app, catalog_filters, event_data, nested
+from ai_service.main import Settings, app, catalog_filters, event_data, is_ai_eligible, nested
 
 
 client = TestClient(app)
@@ -76,3 +76,31 @@ def test_nested_supports_list_indices_from_openrouter_response() -> None:
     payload = {"choices": [{"message": {"content": "grounded answer"}}]}
 
     assert nested(payload, "choices", 0, "message", "content") == "grounded answer"
+
+
+def test_ai_assigned_agent_bot_remains_eligible() -> None:
+    settings = Settings.from_env()
+
+    assert is_ai_eligible(
+        {
+            "status": "open",
+            "inbox_id": 1,
+            "meta": {"assignee": {"id": 1, "bot_type": "webhook"}},
+            "custom_attributes": {},
+        },
+        settings,
+    )
+
+
+def test_human_assignee_is_not_ai_eligible() -> None:
+    settings = Settings.from_env()
+
+    assert not is_ai_eligible(
+        {
+            "status": "open",
+            "inbox_id": 1,
+            "meta": {"assignee": {"id": 2, "name": "Human Agent"}},
+            "custom_attributes": {},
+        },
+        settings,
+    )
