@@ -10,6 +10,8 @@ import {
     LayoutDashboard,
     LogOut,
     Menu,
+    Moon,
+    Sun,
     CheckCircle2,
     AlertCircle,
 } from 'lucide-react';
@@ -34,6 +36,8 @@ const nav: NavItem[] = [
     { label: 'นำเข้าแพ็กเกจ', href: routes.imports.index, icon: FileSpreadsheet, match: '/admin/imports' },
     { label: 'โทเคน API', href: routes.apiTokens.index, icon: KeyRound, match: '/admin/api-tokens' },
 ];
+
+const THEME_STORAGE_KEY = 'aion3-theme';
 
 function FlashMessages() {
     const { flash } = usePage<PageProps>().props;
@@ -74,6 +78,22 @@ export default function AdminLayout({ title, actions, children }: { title: strin
     const auth = page.props.auth;
     const currentUrl = page.url;
     const [open, setOpen] = useState(false);
+    const [darkMode, setDarkMode] = useState(() => {
+        if (typeof window === 'undefined') {
+            return false;
+        }
+
+        return document.documentElement.dataset.theme === 'dark';
+    });
+
+    useEffect(() => {
+        document.documentElement.dataset.theme = darkMode ? 'dark' : 'light';
+        try {
+            window.localStorage.setItem(THEME_STORAGE_KEY, darkMode ? 'dark' : 'light');
+        } catch {
+            // Private browsing or a blocked storage policy should not break the UI toggle.
+        }
+    }, [darkMode]);
 
     function logout() {
         router.post(routes.logout);
@@ -111,6 +131,16 @@ export default function AdminLayout({ title, actions, children }: { title: strin
                 );
             })}
             <div className="mt-auto border-t border-slate-200 px-3 pt-3">
+                <button
+                    type="button"
+                    onClick={() => setDarkMode((current) => !current)}
+                    aria-pressed={darkMode}
+                    title={darkMode ? 'เปลี่ยนเป็นโหมดสว่าง' : 'เปลี่ยนเป็นโหมดมืด'}
+                    className="mb-2 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-600 transition hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-400"
+                >
+                    {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                    {darkMode ? 'โหมดสว่าง' : 'โหมดมืด'}
+                </button>
                 <p className="truncate px-1 text-xs text-slate-500">{auth.user?.email}</p>
                 <button
                     type="button"

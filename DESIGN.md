@@ -2,9 +2,10 @@
 
 ## Direction
 
-Quiet light workspace inspired by Notion: low-chroma surfaces, clear type hierarchy,
-compact controls, and no decorative color. The interface should feel calm and easy to read
-at the point where an operator is editing business data.
+Quiet workspace inspired by Notion: low-chroma surfaces, clear type hierarchy, compact
+controls, and no decorative color. Light mode is the default; a user-controlled dark mode
+uses the same neutral hierarchy and persists per browser. The interface should feel calm
+and easy to read at the point where an operator is editing business data.
 
 ## Color tokens
 
@@ -34,7 +35,7 @@ body text readable, and avoid all-caps UI copy. Thai and English labels share th
 - Buttons: 40px minimum height, 6px radius, one primary treatment, clear disabled state.
 - Inputs: 40px minimum height, 6px radius, white surface, visible focus ring, inline error text.
 - Cards and tables: 8px radius, border-led separation, no decorative drop shadow.
-- Sidebar: secondary surface with one selected navigation row.
+- Sidebar: secondary surface with one selected navigation row and a visible light/dark theme toggle.
 - Forms: grouped sections with consistent label, hint, field, and action spacing.
 
 ## Responsive behavior
