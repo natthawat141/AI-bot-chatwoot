@@ -52,7 +52,7 @@ const fields = [
 
 function Status({ status }: { status: PreviewRow['status'] }) {
     const styles = {
-        new: 'bg-green-100 text-green-800',
+        new: 'bg-blue-100 text-blue-800',
         duplicate: 'bg-amber-100 text-amber-800',
         invalid: 'bg-red-100 text-red-800',
     };
@@ -103,7 +103,7 @@ export default function ImportsIndex({ columns, history, preview }: Props) {
                     <div className="flex flex-col gap-4">
                         <div>
                             <div className="flex items-center gap-2">
-                                <FileSpreadsheet className="h-5 w-5 text-green-700" />
+                                <FileSpreadsheet className="h-5 w-5 text-blue-700" />
                                 <h2 className="text-lg font-semibold text-slate-900">1. เตรียมไฟล์ Excel หรือ CSV</h2>
                             </div>
                             <p className="mt-1 text-sm text-slate-600">ใช้หัวคอลัมน์ตามลำดับที่กำหนด ห้ามเปลี่ยนชื่อหรือสลับคอลัมน์</p>
@@ -135,7 +135,7 @@ export default function ImportsIndex({ columns, history, preview }: Props) {
                             type="file"
                             accept=".xlsx,.xls,.csv"
                             onChange={(e) => form.setData('file', e.target.files?.[0] ?? null)}
-                            className="block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm file:mr-3 file:rounded-md file:border-0 file:bg-green-50 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-green-800"
+                            className="block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm file:mr-3 file:rounded-md file:border-0 file:bg-blue-50 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-blue-800"
                         />
                         <Button type="submit" disabled={!form.data.file || form.processing} className="shrink-0">
                             <Upload className="h-4 w-4" />{form.processing ? 'กำลังตรวจสอบ...' : 'ตรวจสอบไฟล์'}
@@ -145,9 +145,9 @@ export default function ImportsIndex({ columns, history, preview }: Props) {
                 </section>
 
                 {preview && (
-                    <section className="rounded-xl border-2 border-green-300 bg-white p-5 shadow-sm lg:p-6">
+                    <section className="rounded-xl border-2 border-blue-300 bg-white p-5 shadow-sm lg:p-6">
                         <div className="flex items-start gap-3">
-                            <ShieldCheck className="mt-0.5 h-6 w-6 shrink-0 text-green-700" />
+                            <ShieldCheck className="mt-0.5 h-6 w-6 shrink-0 text-blue-700" />
                             <div>
                                 <h2 className="text-lg font-semibold text-slate-900">3. ตรวจผลและยืนยันการเพิ่ม</h2>
                                 <p className="mt-1 text-sm text-slate-600">ไฟล์: {preview.filename}</p>
@@ -155,7 +155,7 @@ export default function ImportsIndex({ columns, history, preview }: Props) {
                         </div>
 
                         <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                            <div className="rounded-lg border border-green-200 bg-green-50 p-4"><p className="text-sm text-green-800">พร้อมเพิ่มใหม่</p><p className="mt-1 text-2xl font-bold text-green-900">{preview.new_count}</p></div>
+                            <div className="rounded-lg border border-blue-200 bg-blue-50 p-4"><p className="text-sm text-blue-800">พร้อมเพิ่มใหม่</p><p className="mt-1 text-2xl font-bold text-blue-900">{preview.new_count}</p></div>
                             <div className="rounded-lg border border-amber-200 bg-amber-50 p-4"><p className="text-sm text-amber-800">รหัสซ้ำ—ข้าม</p><p className="mt-1 text-2xl font-bold text-amber-900">{preview.duplicate_count}</p></div>
                             <div className="rounded-lg border border-red-200 bg-red-50 p-4"><p className="text-sm text-red-800">ข้อมูลผิด—ข้าม</p><p className="mt-1 text-2xl font-bold text-red-900">{preview.invalid_count}</p></div>
                         </div>
@@ -178,7 +178,7 @@ export default function ImportsIndex({ columns, history, preview }: Props) {
                     <h2 className="mb-3 text-base font-semibold text-slate-900">ประวัติการนำเข้าแพ็กเกจ / โปรโมชัน</h2>
                     {history.length === 0 ? <div className="rounded-xl border border-slate-200 bg-white"><EmptyState message="ยังไม่มีประวัติการนำเข้า" /></div> : (
                         <Table><thead className="bg-slate-50"><tr><Th>ไฟล์</Th><Th>เพิ่มใหม่</Th><Th>ข้ามรหัสซ้ำ</Th><Th>ผิดพลาด</Th><Th>วันที่</Th></tr></thead><tbody className="divide-y divide-slate-100">
-                            {history.map((row) => <tr key={row.id}><Td>{row.filename}</Td><Td className="text-green-700">{row.rows_imported}</Td><Td className="text-amber-700">{row.rows_skipped}</Td><Td className="text-red-700">{row.rows_failed}</Td><Td>{row.created_at ?? '—'}</Td></tr>)}
+                            {history.map((row) => <tr key={row.id}><Td>{row.filename}</Td><Td className="text-blue-700">{row.rows_imported}</Td><Td className="text-amber-700">{row.rows_skipped}</Td><Td className="text-red-700">{row.rows_failed}</Td><Td>{row.created_at ?? '—'}</Td></tr>)}
                         </tbody></Table>
                     )}
                 </section>

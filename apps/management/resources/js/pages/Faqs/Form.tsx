@@ -38,7 +38,7 @@ export default function FaqForm({ faq }: Props) {
             <div className="mx-auto w-full max-w-5xl">
                 <Link
                     href={routes.faqs.index}
-                    className="mb-4 inline-flex min-h-11 items-center gap-1.5 rounded-lg px-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600"
+                    className="mb-4 inline-flex min-h-11 items-center gap-1.5 rounded-lg px-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
                 >
                     <ArrowLeft className="h-4 w-4" />
                     กลับไปหน้าคำถามพบบ่อย
@@ -137,7 +137,7 @@ export default function FaqForm({ faq }: Props) {
                             </Button>
                             <Link
                                 href={routes.faqs.index}
-                                className="inline-flex min-h-10 items-center justify-center rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600"
+                                className="inline-flex min-h-10 items-center justify-center rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
                             >
                                 ยกเลิก
                             </Link>

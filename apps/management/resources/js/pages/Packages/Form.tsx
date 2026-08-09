@@ -11,6 +11,10 @@ interface Props {
     categories: { id: number; name_th: string }[];
 }
 
+function isAvailability(value: string): value is ServicePackage['availability'] {
+    return ['available', 'reserved', 'unavailable'].includes(value);
+}
+
 export default function PackageForm({ pkg, categories }: Props) {
     const editing = Boolean(pkg);
     const { data, setData, post, put, processing, errors } = useForm({
@@ -136,7 +140,15 @@ export default function PackageForm({ pkg, categories }: Props) {
                             </SelectInput>
                         </Field>
                         <Field label="ความพร้อม" error={errors.availability}>
-                            <SelectInput value={data.availability} onChange={(e) => setData('availability', e.target.value)} error={errors.availability}>
+                            <SelectInput
+                                value={data.availability}
+                                onChange={(e) => {
+                                    if (isAvailability(e.target.value)) {
+                                        setData('availability', e.target.value);
+                                    }
+                                }}
+                                error={errors.availability}
+                            >
                                 <option value="available">พร้อมเสนอ</option><option value="reserved">จองแล้ว</option><option value="unavailable">ไม่พร้อม</option>
                             </SelectInput>
                         </Field>

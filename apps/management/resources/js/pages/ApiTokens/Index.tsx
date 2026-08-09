@@ -76,16 +76,16 @@ export default function ApiTokensIndex({ tokens, newToken }: Props) {
             <Head title="โทเคน API" />
 
             {newToken && (
-                <Card className="mb-6 border-green-300 bg-green-50 p-4">
+                <Card className="mb-6 border-blue-300 bg-blue-50 p-4">
                     <div className="flex items-start gap-3">
-                        <KeyRound className="mt-0.5 h-5 w-5 shrink-0 text-green-700" />
+                        <KeyRound className="mt-0.5 h-5 w-5 shrink-0 text-blue-700" />
                         <div className="min-w-0 flex-1">
-                            <p className="text-sm font-semibold text-green-800">โทเคนใหม่ถูกสร้างแล้ว</p>
-                            <p className="mb-2 text-xs text-green-700">
+                            <p className="text-sm font-semibold text-blue-800">โทเคนใหม่ถูกสร้างแล้ว</p>
+                            <p className="mb-2 text-xs text-blue-700">
                                 คัดลอกและเก็บโทเคนนี้ไว้ทันที เพราะจะแสดงเพียงครั้งเดียวและไม่สามารถดูได้อีก
                             </p>
                             <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                                <code className="min-w-0 flex-1 overflow-x-auto rounded-md border border-green-200 bg-white px-3 py-2 font-mono text-sm text-slate-800">
+                                <code className="min-w-0 flex-1 overflow-x-auto rounded-md border border-blue-200 bg-white px-3 py-2 font-mono text-sm text-slate-800">
                                     {newToken}
                                 </code>
                                 <Button type="button" variant="secondary" onClick={copyToken}>

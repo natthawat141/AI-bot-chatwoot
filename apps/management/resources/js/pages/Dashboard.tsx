@@ -65,8 +65,8 @@ export default function Dashboard({ stats, analytics }: { stats: Stats; analytic
                     const Icon = tile.icon;
                     return (
                         <Link key={tile.key} href={tile.href}>
-                            <Card className="p-4 transition hover:border-green-300 hover:shadow-md">
-                                <Icon className="h-6 w-6 text-green-600" />
+                            <Card className="p-4 transition hover:border-blue-300 hover:shadow-md">
+                                <Icon className="h-6 w-6 text-blue-600" />
                                 <p className="mt-3 text-2xl font-bold text-slate-800">{stats[tile.key]}</p>
                                 <p className="text-xs text-slate-500">{tile.label}</p>
                             </Card>
@@ -79,7 +79,7 @@ export default function Dashboard({ stats, analytics }: { stats: Stats; analytic
                 <div className="flex flex-col gap-2 border-b border-slate-200 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <div className="flex items-center gap-2">
-                            <Activity className="h-5 w-5 text-green-700" />
+                            <Activity className="h-5 w-5 text-blue-700" />
                             <h2 className="text-lg font-semibold text-slate-900">การตอบของ AI</h2>
                         </div>
                         <p className="mt-1 text-sm text-slate-600">ดูคำถามและคำตอบล่าสุดที่ส่งผ่าน LINE Bot</p>
@@ -141,7 +141,7 @@ export default function Dashboard({ stats, analytics }: { stats: Stats; analytic
                                         <td className="px-5 py-4">
                                             <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${
                                                 interaction.status === 'answered'
-                                                    ? 'bg-green-100 text-green-800'
+                                                    ? 'bg-blue-100 text-blue-800'
                                                     : 'bg-red-100 text-red-800'
                                             }`}>
                                                 {interaction.status === 'answered' ? 'สำเร็จ' : 'ไม่สำเร็จ'}
