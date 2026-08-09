@@ -54,7 +54,7 @@ function FlashMessages() {
     return (
         <div className="fixed top-4 right-4 z-50 w-full max-w-sm">
             {flash.success && (
-                <div className="mb-2 flex items-start gap-2 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800 shadow">
+                <div className="mb-2 flex items-start gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-800 shadow">
                     <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
                     <span>{flash.success}</span>
                 </div>
@@ -84,7 +84,7 @@ export default function AdminLayout({ title, actions, children }: { title: strin
     const sidebar = (
         <nav className="flex h-full flex-col gap-1 p-3">
             <div className="px-3 py-4">
-                <p className="text-lg font-bold text-[#2773E4]">AI Knowledge</p>
+                <p className="text-lg font-semibold tracking-tight text-zinc-100">AI Knowledge</p>
                 <p className="text-xs text-slate-500">จัดการข้อมูลที่ AI ใช้ตอบ</p>
             </div>
             {nav.map((item) => {
@@ -96,7 +96,7 @@ export default function AdminLayout({ title, actions, children }: { title: strin
                         onClick={() => setOpen(false)}
                         className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition ${
                             isActive(item.match)
-                                ? 'bg-[#2773E4] text-white'
+                                ? 'bg-zinc-100 text-zinc-950'
                                 : 'text-slate-600 hover:bg-slate-100'
                         }`}
                     >
@@ -110,7 +110,7 @@ export default function AdminLayout({ title, actions, children }: { title: strin
                 <button
                     type="button"
                     onClick={logout}
-                    className="mt-2 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-600 transition hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2773E4]"
+                    className="mt-2 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-600 transition hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-400"
                 >
                     <LogOut className="h-4 w-4" />
                     ออกจากระบบ
@@ -151,7 +151,7 @@ export default function AdminLayout({ title, actions, children }: { title: strin
                             หากระบบมีปัญหา ติดต่อผู้สร้าง{' '}
                             <a
                                 href="mailto:bill.natthawat@gmail.com"
-                                className="font-medium text-[#2773E4] underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2773E4]"
+                                className="font-medium text-zinc-100 underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-400"
                             >
                                 bill.natthawat@gmail.com
                             </a>

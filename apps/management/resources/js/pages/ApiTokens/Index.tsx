@@ -76,16 +76,16 @@ export default function ApiTokensIndex({ tokens, newToken }: Props) {
             <Head title="โทเคน API" />
 
             {newToken && (
-                <Card className="mb-6 border-blue-300 bg-blue-50 p-4">
+                <Card className="mb-6 border-zinc-300 bg-zinc-50 p-4">
                     <div className="flex items-start gap-3">
-                        <KeyRound className="mt-0.5 h-5 w-5 shrink-0 text-blue-700" />
+                        <KeyRound className="mt-0.5 h-5 w-5 shrink-0 text-zinc-700" />
                         <div className="min-w-0 flex-1">
-                            <p className="text-sm font-semibold text-blue-800">โทเคนใหม่ถูกสร้างแล้ว</p>
-                            <p className="mb-2 text-xs text-blue-700">
+                            <p className="text-sm font-semibold text-zinc-800">โทเคนใหม่ถูกสร้างแล้ว</p>
+                            <p className="mb-2 text-xs text-zinc-700">
                                 คัดลอกและเก็บโทเคนนี้ไว้ทันที เพราะจะแสดงเพียงครั้งเดียวและไม่สามารถดูได้อีก
                             </p>
                             <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                                <code className="min-w-0 flex-1 overflow-x-auto rounded-md border border-blue-200 bg-white px-3 py-2 font-mono text-sm text-slate-800">
+                                <code className="min-w-0 flex-1 overflow-x-auto rounded-md border border-zinc-200 bg-white px-3 py-2 font-mono text-sm text-slate-800">
                                     {newToken}
                                 </code>
                                 <Button type="button" variant="secondary" onClick={copyToken}>
@@ -131,8 +131,8 @@ export default function ApiTokensIndex({ tokens, newToken }: Props) {
                 </form>
             </Card>
 
-            <div className="mb-4 flex items-start gap-3 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
-                <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-blue-700" />
+            <div className="mb-4 flex items-start gap-3 rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-900">
+                <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-zinc-700" />
                 <p>
                     รายการที่มีป้าย <strong>โทเคนระบบ</strong> ถูกใช้งานโดย LINE Bot/agent และไม่สามารถเพิกถอนจากหน้าเว็บได้
                     เพื่อป้องกัน Bot หยุดทำงานโดยไม่ตั้งใจ
@@ -164,7 +164,7 @@ export default function ApiTokensIndex({ tokens, newToken }: Props) {
                                     <Td>
                                         <div className="font-medium text-slate-800">{token.name}</div>
                                         {token.is_protected && (
-                                            <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">
+                                            <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-800">
                                                 <LockKeyhole className="h-3 w-3" />
                                                 โทเคนระบบ
                                             </span>
@@ -189,7 +189,7 @@ export default function ApiTokensIndex({ tokens, newToken }: Props) {
                                         {token.revoked_at ? (
                                             <span className="text-xs text-slate-400">—</span>
                                         ) : token.is_protected ? (
-                                            <span className="inline-flex items-center gap-1 text-xs font-medium text-blue-700" title="LINE Bot/agent กำลังใช้งาน">
+                                            <span className="inline-flex items-center gap-1 text-xs font-medium text-zinc-700" title="LINE Bot/agent กำลังใช้งาน">
                                                 <LockKeyhole className="h-3.5 w-3.5" />
                                                 ล็อกโดยระบบ
                                             </span>

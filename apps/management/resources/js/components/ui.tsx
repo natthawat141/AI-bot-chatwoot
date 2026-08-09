@@ -2,9 +2,9 @@ import type { ReactNode, InputHTMLAttributes, TextareaHTMLAttributes, SelectHTML
 
 /** Compact, reusable form + table primitives shared by every admin CRUD screen. */
 
-const labelBase = 'block text-sm font-medium text-slate-700 mb-1';
+const labelBase = 'mb-1 block text-sm font-medium text-slate-700';
 const controlBase =
-    'block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm placeholder:text-slate-400 focus:border-[#2773E4] focus:ring-2 focus:ring-blue-200 focus:outline-none disabled:bg-slate-100';
+    'block min-h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm placeholder:text-slate-400 focus:border-zinc-400 focus:ring-2 focus:ring-zinc-700 focus:outline-none disabled:bg-slate-100';
 
 export function Field({
     label,
@@ -67,7 +67,7 @@ export function Toggle({
                 type="checkbox"
                 checked={checked}
                 onChange={(e) => onChange(e.target.checked)}
-                className="h-4 w-4 rounded border-slate-300 text-[#2773E4] focus:ring-[#2773E4]"
+                className="h-4 w-4 rounded border-slate-300 text-zinc-100 focus:ring-zinc-400"
             />
             <span className="text-sm text-slate-700">{label}</span>
         </label>
@@ -77,8 +77,8 @@ export function Toggle({
 type Variant = 'primary' | 'secondary' | 'danger' | 'ghost';
 
 const variants: Record<Variant, string> = {
-    primary: 'bg-[#2773E4] text-white hover:bg-[#1f65cf] focus:ring-blue-300',
-    secondary: 'bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 focus:ring-slate-200',
+    primary: 'bg-zinc-100 text-zinc-950 hover:bg-white focus:ring-zinc-500',
+    secondary: 'border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 focus:ring-slate-200',
     danger: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-300',
     ghost: 'bg-transparent text-slate-600 hover:bg-slate-100 focus:ring-slate-200',
 };
@@ -92,7 +92,7 @@ export function Button({
     return (
         <button
             {...props}
-            className={`inline-flex items-center justify-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium transition focus:ring-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60 ${variants[variant]} ${className}`}
+            className={`inline-flex min-h-10 items-center justify-center gap-1.5 rounded-md px-3.5 py-2 text-sm font-medium transition focus:ring-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60 ${variants[variant]} ${className}`}
         >
             {children}
         </button>
@@ -104,7 +104,7 @@ export function Badge({ active, labels }: { active: boolean; labels?: [string, s
     return (
         <span
             className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                active ? 'bg-blue-100 text-blue-800' : 'bg-slate-100 text-slate-600'
+                active ? 'bg-zinc-100 text-zinc-800' : 'bg-slate-100 text-slate-600'
             }`}
         >
             {active ? on : off}
@@ -113,12 +113,12 @@ export function Badge({ active, labels }: { active: boolean; labels?: [string, s
 }
 
 export function Card({ children, className = '' }: { children: ReactNode; className?: string }) {
-    return <div className={`rounded-xl border border-slate-200 bg-white shadow-sm ${className}`}>{children}</div>;
+    return <div className={`rounded-lg border border-slate-200 bg-white ${className}`}>{children}</div>;
 }
 
 export function Table({ children }: { children: ReactNode }) {
     return (
-        <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
+        <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
             <table className="min-w-full divide-y divide-slate-200 text-sm">{children}</table>
         </div>
     );

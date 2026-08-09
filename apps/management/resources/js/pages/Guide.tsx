@@ -160,8 +160,8 @@ export default function Guide() {
                     type="button"
                     aria-pressed={language === value}
                     onClick={() => setLanguage(value)}
-                    className={`rounded-md px-3 py-1.5 text-sm font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 ${
-                        language === value ? 'bg-blue-700 text-white' : 'text-slate-600 hover:bg-slate-100'
+                    className={`rounded-md px-3 py-1.5 text-sm font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-600 ${
+                        language === value ? 'bg-zinc-700 text-white' : 'text-slate-600 hover:bg-slate-100'
                     }`}
                 >
                     {value === 'th' ? 'ไทย' : 'English'}
@@ -176,12 +176,12 @@ export default function Guide() {
 
             <section className="rounded-xl bg-slate-900 px-5 py-6 text-white sm:px-7">
                 <div className="flex max-w-3xl items-start gap-4">
-                    <BookOpenCheck className="mt-1 h-7 w-7 shrink-0 text-blue-400" />
+                    <BookOpenCheck className="mt-1 h-7 w-7 shrink-0 text-zinc-400" />
                     <div>
                         <h2 className="text-xl font-semibold text-white">{t.introTitle}</h2>
                         <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-300">{t.introBody}</p>
                         <div className="mt-4 flex items-start gap-2 rounded-lg bg-white/10 px-3.5 py-3 text-sm leading-6 text-slate-200">
-                            <Info className="mt-0.5 h-4 w-4 shrink-0 text-blue-300" />
+                            <Info className="mt-0.5 h-4 w-4 shrink-0 text-zinc-300" />
                             <p>{t.important}</p>
                         </div>
                     </div>
@@ -201,7 +201,7 @@ export default function Guide() {
                                 className={`grid gap-4 px-5 py-5 lg:grid-cols-[220px_minmax(0,1fr)_auto] lg:items-center ${index > 0 ? 'border-t border-slate-200' : ''}`}
                             >
                                 <div className="flex items-center gap-3">
-                                    <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-blue-700">
+                                    <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-zinc-50 text-zinc-700">
                                         <Icon className="h-5 w-5" />
                                     </span>
                                     <h3 className="font-semibold text-slate-900">{item.title}</h3>
@@ -212,7 +212,7 @@ export default function Guide() {
                                 </div>
                                 <Link
                                     href={resource.href}
-                                    className="inline-flex items-center gap-1.5 text-sm font-medium text-blue-700 hover:text-blue-800 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+                                    className="inline-flex items-center gap-1.5 text-sm font-medium text-zinc-700 hover:text-zinc-800 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-600"
                                 >
                                     {t.openForm}
                                     <ArrowRight className="h-4 w-4" />
@@ -230,7 +230,7 @@ export default function Guide() {
                     {t.steps.map((step, index) => (
                         <li key={step.title} className="relative">
                             <div className="flex items-center gap-3">
-                                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-700 text-sm font-semibold text-white">
+                                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-zinc-700 text-sm font-semibold text-white">
                                     {index + 1}
                                 </span>
                                 <h3 className="font-semibold text-slate-900">{step.title}</h3>
@@ -245,14 +245,14 @@ export default function Guide() {
                 <h2 className="text-lg font-semibold text-slate-900">{t.statusTitle}</h2>
                 <div className="mt-4 grid gap-4 md:grid-cols-2">
                     <div className="rounded-xl border border-slate-200 bg-white p-5">
-                        <div className="flex items-center gap-2 text-blue-700">
+                        <div className="flex items-center gap-2 text-zinc-700">
                             <ToggleRight className="h-5 w-5" />
                             <h3 className="font-semibold text-slate-900">{t.activeTitle}</h3>
                         </div>
                         <p className="mt-2 text-sm leading-6 text-slate-600">{t.activeBody}</p>
                     </div>
                     <div className="rounded-xl border border-slate-200 bg-white p-5">
-                        <div className="flex items-center gap-2 text-blue-700">
+                        <div className="flex items-center gap-2 text-zinc-700">
                             <CheckCircle2 className="h-5 w-5" />
                             <h3 className="font-semibold text-slate-900">{t.publishedTitle}</h3>
                         </div>
@@ -263,7 +263,7 @@ export default function Guide() {
 
             <section className="mt-8 flex flex-col gap-4 rounded-xl border border-slate-200 bg-white px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
                 <div className="flex max-w-3xl items-start gap-3">
-                    <FileSpreadsheet className="mt-0.5 h-5 w-5 shrink-0 text-blue-700" />
+                    <FileSpreadsheet className="mt-0.5 h-5 w-5 shrink-0 text-zinc-700" />
                     <div>
                         <h2 className="font-semibold text-slate-900">{t.excelTitle}</h2>
                         <p className="mt-1 text-sm leading-6 text-slate-600">{t.excelBody}</p>
@@ -271,7 +271,7 @@ export default function Guide() {
                 </div>
                 <Link
                     href={routes.imports.index}
-                    className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-blue-700 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-blue-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+                    className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-zinc-700 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-zinc-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-600"
                 >
                     {t.goImport}
                     <ArrowRight className="h-4 w-4" />
@@ -280,7 +280,7 @@ export default function Guide() {
 
             <section className="mt-8">
                 <div className="flex items-start gap-3">
-                    <Database className="mt-0.5 h-5 w-5 shrink-0 text-blue-700" />
+                    <Database className="mt-0.5 h-5 w-5 shrink-0 text-zinc-700" />
                     <div>
                         <h2 className="text-lg font-semibold text-slate-900">{t.storageTitle}</h2>
                         <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-600">{t.storageBody}</p>
@@ -308,22 +308,22 @@ export default function Guide() {
                 </div>
             </section>
 
-            <section className="mt-8 rounded-xl bg-blue-50 px-5 py-6 sm:px-6">
+            <section className="mt-8 rounded-xl bg-zinc-50 px-5 py-6 sm:px-6">
                 <div className="flex items-center gap-2">
-                    <Bot className="h-5 w-5 text-blue-800" />
-                    <h2 className="font-semibold text-blue-950">{t.checklistTitle}</h2>
+                    <Bot className="h-5 w-5 text-zinc-800" />
+                    <h2 className="font-semibold text-zinc-950">{t.checklistTitle}</h2>
                 </div>
                 <ul className="mt-4 grid gap-3 md:grid-cols-2">
                     {t.checklist.map((item) => (
-                        <li key={item} className="flex items-start gap-2 text-sm leading-6 text-blue-950">
-                            <CheckCircle2 className="mt-1 h-4 w-4 shrink-0 text-blue-700" />
+                        <li key={item} className="flex items-start gap-2 text-sm leading-6 text-zinc-950">
+                            <CheckCircle2 className="mt-1 h-4 w-4 shrink-0 text-zinc-700" />
                             {item}
                         </li>
                     ))}
                 </ul>
                 <Link
                     href={routes.dashboard}
-                    className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-blue-800 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700"
+                    className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-zinc-800 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-700"
                 >
                     <BarChart3 className="h-4 w-4" />
                     {t.viewDashboard}
