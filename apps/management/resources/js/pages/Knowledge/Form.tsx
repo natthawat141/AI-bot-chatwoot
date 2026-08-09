@@ -51,7 +51,7 @@ export default function KnowledgeForm({ entry }: Props) {
             </Link>
 
             <form onSubmit={submit}>
-                <Card className="max-w-2xl space-y-4 p-6">
+                <Card className="mx-auto max-w-2xl space-y-4 p-6">
                     <Field label="หัวข้อ" error={errors.title} required>
                         <TextInput value={data.title} onChange={(e) => setData('title', e.target.value)} error={errors.title} />
                     </Field>

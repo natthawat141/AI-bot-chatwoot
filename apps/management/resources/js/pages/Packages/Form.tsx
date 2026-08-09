@@ -69,7 +69,7 @@ export default function PackageForm({ pkg, categories }: Props) {
             </Link>
 
             <form onSubmit={submit}>
-                <Card className="max-w-3xl space-y-4 p-6">
+                <Card className="mx-auto max-w-3xl space-y-4 p-6">
                     <div className="grid gap-4 sm:grid-cols-2">
                         <Field label="หมวดบริการ" error={errors.category_id}>
                             <SelectInput
