@@ -77,4 +77,6 @@ File.open('/runtime/chatwoot_bot.env', File::WRONLY | File::CREAT | File::TRUNC,
   file.write("CHATWOOT_ALLOWED_INBOX_IDS=#{inbox&.id}\n")
 end
 
+::Redis::Alfred.delete(::Redis::Alfred::CHATWOOT_INSTALLATION_ONBOARDING)
+
 puts "chatwoot bootstrap complete account=#{account.id} team=#{team.id} line_inbox=#{inbox&.id || 'not_configured'}"
