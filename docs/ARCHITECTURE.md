@@ -60,7 +60,7 @@ flowchart LR
    exhausted events to a dead-letter queue.
 5. The worker reads approved catalog/knowledge records from Laravel and sends grounded replies
    through the Chatwoot API.
-6. Requests for a person, negotiation, payment, or other handoff conditions change the
+6. Requests for a person, a payment/refund problem, or other handoff conditions change the
    conversation to human mode and assign it to the shared handoff team.
 
 ## Ownership and security boundaries

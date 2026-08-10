@@ -37,7 +37,7 @@ class CatalogSearchApiTest extends TestCase
 
     public function test_zero_results_are_explicit_and_do_not_relax_filters(): void
     {
-        ServicePackage::factory()->create(['transaction_type' => 'sale', 'availability' => 'available', 'price' => 9000000]);
+        ServicePackage::factory()->create(['transaction_type' => 'sale', 'availability' => 'available', 'price' => 9000000, 'sale_price' => null]);
 
         $this->postJson('/api/v1/catalog/search', ['transaction_type' => 'sale', 'price' => ['max' => 1000000]], $this->auth())
             ->assertOk()->assertJsonPath('meta.count', 0)->assertJsonPath('data', []);

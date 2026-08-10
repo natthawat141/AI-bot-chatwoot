@@ -102,6 +102,39 @@ class KnowledgeApiTest extends TestCase
             ->assertJsonPath('data.0.id', $active->id);
     }
 
+    public function test_faq_search_matches_question_and_does_not_return_unrelated_rows(): void
+    {
+        $match = Faq::factory()->create([
+            'question_th' => 'วิธีชำระเงินสำหรับคอนโด',
+            'answer_th' => 'โอนผ่านบัญชีบริษัท',
+        ]);
+        Faq::factory()->create([
+            'question_th' => 'เงื่อนไขการเช่า',
+            'answer_th' => 'สัญญาขั้นต่ำหนึ่งปี',
+        ]);
+
+        $response = $this->getJson('/api/v1/faqs?q='.urlencode('ชำระเงิน').'&limit=5', $this->auth())
+            ->assertOk();
+
+        $response->assertJsonPath('meta.count', 1)
+            ->assertJsonPath('data.0.id', $match->id);
+    }
+
+    public function test_knowledge_search_matches_body_and_tags(): void
+    {
+        $match = KnowledgeEntry::factory()->create([
+            'body' => 'นโยบายคืนเงินและการตรวจสอบรายการโอน',
+            'tags' => 'ชำระเงิน,คืนเงิน',
+        ]);
+        KnowledgeEntry::factory()->create(['body' => 'ข้อมูลทำเลบางนา', 'tags' => 'ทำเล']);
+
+        $response = $this->getJson('/api/v1/knowledge?q='.urlencode('คืนเงิน').'&limit=5', $this->auth())
+            ->assertOk();
+
+        $response->assertJsonPath('meta.count', 1)
+            ->assertJsonPath('data.0.id', $match->id);
+    }
+
     public function test_meta_reports_active_counts_and_schema_version(): void
     {
         ServicePackage::factory()->create();

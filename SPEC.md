@@ -211,7 +211,7 @@ The canonical concept is `Catalog Item`. Existing packages are one catalog item 
 
 ### 6.7 Human Handoff
 
-- **FR-HO-001:** Handoff triggers include explicit human requests, complaints, unsupported negotiation, payment/refund questions, low-confidence or invalid AI output, and unavailable required data.
+- **FR-HO-001:** Handoff triggers include explicit human requests, complaints, payment/refund problems, low-confidence or invalid AI output, and unavailable required data. Ordinary questions about payment methods or whether a price is negotiable remain AI-answerable when grounded data is available.
 - **FR-HO-002:** Handoff first sets `ai_mode=human` and moves the conversation to the configured human state.
 - **FR-HO-003:** The conversation is assigned to a configured Chatwoot team, not a hard-coded agent.
 - **FR-HO-004:** A neutral public acknowledgement is sent only after the AI lock succeeds.

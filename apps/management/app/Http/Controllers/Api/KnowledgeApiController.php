@@ -85,6 +85,9 @@ class KnowledgeApiController extends Controller
         $query = Faq::query()->active();
 
         $this->applyUpdatedSince($query, $request);
+        $this->applySearch($query, $request, [
+            'question_th', 'answer_th', 'question_en', 'answer_en', 'category', 'tags',
+        ]);
 
         if (($category = $request->query('category')) !== null && $category !== '') {
             $query->where('category', $category);
@@ -112,6 +115,7 @@ class KnowledgeApiController extends Controller
         $query = KnowledgeEntry::query()->active();
 
         $this->applyUpdatedSince($query, $request);
+        $this->applySearch($query, $request, ['title', 'body', 'category', 'tags', 'type']);
 
         if (($type = $request->query('type')) !== null && $type !== '') {
             $query->where('type', $type);
@@ -173,6 +177,33 @@ class KnowledgeApiController extends Controller
         }
 
         $query->where('updated_at', '>=', $timestamp);
+    }
+
+    /**
+     * Apply a bounded, escaped substring search for the AI service.
+     *
+     * The API intentionally keeps this as a simple database LIKE query. Thai
+     * question cleanup happens in the AI service before this endpoint is called.
+     *
+     * @param  Builder<\Illuminate\Database\Eloquent\Model>  $query
+     * @param  array<int, string>  $columns
+     */
+    private function applySearch(Builder $query, Request $request, array $columns): void
+    {
+        $search = mb_substr(trim((string) $request->query('q')), 0, 160);
+
+        if ($search === '') {
+            return;
+        }
+
+        $escaped = addcslashes($search, '\\%_');
+        $like = '%'.$escaped.'%';
+
+        $query->where(function (Builder $nested) use ($like, $columns): void {
+            foreach ($columns as $column) {
+                $nested->orWhere($column, 'like', $like);
+            }
+        });
     }
 
     private function limit(Request $request): int

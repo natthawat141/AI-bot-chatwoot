@@ -47,12 +47,26 @@ class CatalogSearchController extends Controller
             'location.text' => ['nullable', 'string', 'max:160'],
             'price' => ['nullable', 'array:min,max'],
             'price.min' => ['nullable', 'numeric', 'min:0', 'max:1000000000'],
-            'price.max' => ['nullable', 'numeric', 'min:0', 'max:1000000000', 'gte:price.min'],
+            'price.max' => ['nullable', 'numeric', 'min:0', 'max:1000000000'],
             'attributes' => ['nullable', 'array', 'max:5'],
             'sort' => ['nullable', Rule::in(['relevance', 'price_asc', 'price_desc', 'updated_desc'])],
             'limit' => ['nullable', 'integer', 'min:1', 'max:'.self::MAX_LIMIT],
             'cursor' => ['nullable', 'string', 'max:64'],
         ]);
+
+        // `price.max` is a valid standalone filter (the common "ไม่เกิน ..."
+        // query). Only enforce the range relationship when both bounds exist.
+        $validator->after(function ($validator) use ($input): void {
+            $price = $input['price'] ?? null;
+            if (! is_array($price) || ! array_key_exists('min', $price) || ! array_key_exists('max', $price)
+                || ! is_numeric($price['min']) || ! is_numeric($price['max'])) {
+                return;
+            }
+
+            if ((float) $price['max'] < (float) $price['min']) {
+                $validator->errors()->add('price.max', 'The price.max field must be greater than or equal to price.min.');
+            }
+        });
 
         if ($validator->fails()) {
             return response()->json(['message' => 'Invalid catalog search.', 'errors' => $validator->errors()], 422);

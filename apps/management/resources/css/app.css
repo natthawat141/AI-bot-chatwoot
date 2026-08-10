@@ -31,6 +31,9 @@ body {
 /* The default stays light; this scoped layer keeps the calm neutral hierarchy in dark mode. */
 [data-theme='dark'] {
     color-scheme: dark;
+    --mg-dark-border-faint: #202024;
+    --mg-dark-border: #28282d;
+    --mg-dark-border-control: #36363d;
 }
 
 [data-theme='dark'] body,
@@ -69,25 +72,25 @@ body {
 }
 
 [data-theme='dark'] [class~='border-slate-100'],
-[data-theme='dark'] [class~='divide-slate-100'] {
-    border-color: #242428 !important;
+[data-theme='dark'] [class~='divide-slate-100'] > :not(:last-child) {
+    border-color: var(--mg-dark-border-faint) !important;
 }
 
 [data-theme='dark'] [class~='border-slate-200'],
-[data-theme='dark'] [class~='divide-slate-200'] {
-    border-color: #2f2f34 !important;
+[data-theme='dark'] [class~='divide-slate-200'] > :not(:last-child) {
+    border-color: var(--mg-dark-border) !important;
 }
 
 [data-theme='dark'] [class~='border-slate-300'] {
-    border-color: #414149 !important;
+    border-color: var(--mg-dark-border-control) !important;
 }
 
 [data-theme='dark'] [class~='border-zinc-200'] {
-    border-color: #2f2f34 !important;
+    border-color: var(--mg-dark-border) !important;
 }
 
 [data-theme='dark'] [class~='border-zinc-300'] {
-    border-color: #414149 !important;
+    border-color: var(--mg-dark-border-control) !important;
 }
 
 [data-theme='dark'] [class~='text-slate-900'],

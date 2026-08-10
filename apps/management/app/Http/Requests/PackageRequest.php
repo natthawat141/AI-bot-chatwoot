@@ -15,6 +15,19 @@ class PackageRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
+        // Keep the form contract aligned with the database defaults so older
+        // admin clients can create a package without catalog-only fields.
+        $defaults = [];
+        if (! $this->filled('item_type')) {
+            $defaults['item_type'] = 'service';
+        }
+        if (! $this->filled('availability')) {
+            $defaults['availability'] = 'available';
+        }
+        if ($defaults !== []) {
+            $this->merge($defaults);
+        }
+
         if (blank($this->currency)) {
             $this->merge(['currency' => 'THB']);
         }
