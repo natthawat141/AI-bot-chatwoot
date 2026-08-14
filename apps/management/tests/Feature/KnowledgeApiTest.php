@@ -120,6 +120,28 @@ class KnowledgeApiTest extends TestCase
             ->assertJsonPath('data.0.id', $match->id);
     }
 
+    public function test_faq_search_matches_a_differently_phrased_thai_question(): void
+    {
+        // Thai has no spaces between words, so a shorter, differently worded
+        // question must still match a longer FAQ title covering the same
+        // topic -- a single whole-string LIKE previously required a near
+        // character-for-character substring match and missed this.
+        $match = Faq::factory()->create([
+            'question_th' => 'ค่าธรรมเนียมการโอนกรรมสิทธิ์ใครเป็นคนจ่าย',
+            'answer_th' => 'แบ่งจ่ายฝ่ายละครึ่งตามปกติ',
+        ]);
+        Faq::factory()->create([
+            'question_th' => 'เงื่อนไขการเช่า',
+            'answer_th' => 'สัญญาขั้นต่ำหนึ่งปี',
+        ]);
+
+        $response = $this->getJson('/api/v1/faqs?q='.urlencode('ค่าโอนใครจ่าย').'&limit=5', $this->auth())
+            ->assertOk();
+
+        $response->assertJsonPath('meta.count', 1)
+            ->assertJsonPath('data.0.id', $match->id);
+    }
+
     public function test_knowledge_search_matches_body_and_tags(): void
     {
         $match = KnowledgeEntry::factory()->create([

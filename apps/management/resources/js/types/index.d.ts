@@ -104,6 +104,20 @@ export interface Faq {
     updated_at: string | null;
 }
 
+export interface BusinessProfile {
+    id: number;
+    business_name: string;
+    business_description: string;
+    services_offered: string | null;
+    service_areas: string | null;
+    business_hours: string | null;
+    contact_channels: string | null;
+    conversation_tone: string | null;
+    always_escalate_topics: string | null;
+    created_at: string | null;
+    updated_at: string | null;
+}
+
 export interface KnowledgeEntry {
     id: number;
     title: string;

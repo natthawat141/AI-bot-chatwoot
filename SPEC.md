@@ -136,6 +136,30 @@ The legacy direct-LINE FastAPI implementation is not included. The Python servic
 - **FR-KB-004:** API results use a stable versioned envelope and bounded pagination/limits.
 - **FR-KB-005:** The orchestrator validates response schemas before adding records to an LLM prompt.
 
+### 6.3a Business Profile
+
+**Implemented.** A singleton `business_profile` record (Management/MySQL) lets a Business Admin edit the
+business's own identity/tone as structured *data* -- `business_name`, `business_description`,
+`services_offered`, `service_areas`, `business_hours`, `contact_channels`, `conversation_tone`,
+`always_escalate_topics` -- without ever editing a prompt (SPEC §3: Business Admin does not edit prompts).
+Read via `GET /api/v1/business-profile` (same `api.token:read` auth as other Management read endpoints),
+managed via `apps/management/app/Http/Controllers/Admin/BusinessProfileController.php`.
+
+The AI orchestrator fetches it through `cached_business_profile()` (`services/ai/src/ai_service/main.py`),
+a process-local TTL cache (`BUSINESS_PROFILE_CACHE_TTL_SECONDS`, default 300s) with stale-if-error fallback
+(FR-FAIL-002), and injects it into the LLM prompt as a separate `BUSINESS_PROFILE` block -- data, never
+instructions (FR-AI-009, NFR-SEC-005). This satisfies AC-002 (edits apply after the cache TTL, no AI
+redeploy) for identity/tone the same way it already held for catalog and knowledge.
+
+- **FR-BP-001:** Identity/greeting/business-meta questions (e.g. "คุณคือใคร", "เปิดกี่โมง") route to a
+  `smalltalk` intent (`is_smalltalk()`/`detect_intent()`) and are answered from `BUSINESS_PROFILE` alone --
+  they must never be treated as a knowledge-base lookup, which previously produced an immediate
+  `cannot_confirm` handoff on zero FAQ/knowledge results for exactly these questions.
+- **FR-BP-002:** Catalog terms take priority over smalltalk terms when both could match, preserving
+  existing catalog routing behavior unchanged.
+- **FR-BP-003:** A smalltalk turn must not modify or clear an in-flight catalog conversation's saved
+  filters/result IDs (`ai_catalog_filters`, `ai_last_catalog_result_ids`).
+
 ### 6.4 Domain-Neutral Catalog
 
 The canonical concept is `Catalog Item`. Existing packages are one catalog item type; land and condos are other types.
@@ -201,7 +225,7 @@ The canonical concept is `Catalog Item`. Existing packages are one catalog item 
 
 - **FR-AI-001:** The AI distinguishes informational questions from catalog-search intent.
 - **FR-AI-002:** It extracts only supported filters and validates them before calling Management.
-- **FR-AI-003:** If a missing detail materially changes results, it asks one concise clarification question. Example: sale versus rent.
+- **FR-AI-003:** If a missing detail materially changes results, it asks one concise clarification question. Example: sale versus rent. **Implemented for the knowledge zero-result path**: the first knowledge question with no matching FAQ/knowledge record gets one fixed clarification reply (`ZERO_RESULT_CLARIFICATION`) instead of an immediate handoff; `ai_zero_result_streak` in `custom_attributes` tracks this so a second consecutive empty-context miss in the same conversation still fails closed to `cannot_confirm` handoff rather than asking forever. Any real answer (catalog or knowledge) resets the streak.
 - **FR-AI-004:** It may answer broad discovery questions such as “มีที่ดินที่ไหนบ้าง” with bounded grouped results and a follow-up filter question.
 - **FR-AI-005:** It must not claim that an item exists, is available, or has a price unless the API returned that fact.
 - **FR-AI-006:** Zero exact matches must be reported honestly. Filters may be relaxed only after telling the customer and receiving consent or presenting the relaxation explicitly.
@@ -216,7 +240,7 @@ The canonical concept is `Catalog Item`. Existing packages are one catalog item 
 - **FR-HO-003:** The conversation is assigned to a configured Chatwoot team, not a hard-coded agent.
 - **FR-HO-004:** A neutral public acknowledgement is sent only after the AI lock succeeds.
 - **FR-HO-005:** Private notes use deterministic templates and must not include raw LLM reasoning.
-- **FR-HO-006:** Return to AI clears incompatible human ownership, sets the configured AI state, and records the action.
+- **FR-HO-006:** Return to AI clears incompatible human ownership, sets the configured AI state, and records the action. **Implemented**: staff apply the `ส่งกลับ-ai` Chatwoot label to a conversation; the AI service reacts to the resulting `conversation_updated` webhook (`_process_conversation_updated` in `services/ai/src/ai_service/main.py`), refetches live state under the conversation lock, unassigns the individual agent, sets `ai_mode=ai`, clears both `ส่งกลับ-ai` and the `คนดูแลอยู่` handoff-state label, and logs a private audit note. A stale/duplicate label event (already `ai_mode=ai`) is a no-op, which also prevents the write from re-triggering itself.
 
 ### 6.8 Failure Behaviour
 
@@ -240,12 +264,13 @@ The canonical concept is `Catalog Item`. Existing packages are one catalog item 
 - `ai_mode=human`
 - configured human status, normally `open`
 - assigned to the configured team
+- carries the `คนดูแลอยู่` Chatwoot label (visible in the conversation list without opening custom attributes)
 - AI ignores new customer messages until explicit return
 
 ### Transition Rules
 
 - AI Active → Human Active: deterministic handoff or validated AI handoff action.
-- Human Active → AI Active: explicit staff/admin action only.
+- Human Active → AI Active: explicit staff/admin action only, via the `ส่งกลับ-ai` Chatwoot label (see FR-HO-006).
 - Any ambiguous or failed transition: remain/fail closed in the safer human-owned state.
 
 ## 8. Non-Functional Requirements

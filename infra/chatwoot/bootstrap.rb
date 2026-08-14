@@ -39,10 +39,33 @@ account.account_users.find_or_create_by!(user: service_user) { |membership| memb
 
 team_name = ENV.fetch('CHATWOOT_HANDOFF_TEAM_NAME', 'Sales and Support').downcase
 team = Team.find_or_create_by!(account: account, name: team_name) do |record|
-  record.allow_auto_assign = false
+  record.allow_auto_assign = true
 end
-TeamMember.find_or_create_by!(team_id: team.id, user_id: service_user.id)
+# allow_auto_assign is what fills an unassigned team-routed conversation with
+# a human once handoff() assigns the team; find_or_create_by only sets it on
+# the create branch, so a pre-existing team from an older bootstrap needs this.
+team.update!(allow_auto_assign: true) unless team.allow_auto_assign?
+# The AI service account must stay out of the human round-robin pool, or a
+# handed-off conversation can be auto-assigned right back to the bot.
+TeamMember.where(team_id: team.id, user_id: service_user.id).destroy_all
+TeamMember.find_or_create_by!(team_id: team.id, user_id: user.id)
 service_access_token = service_user.access_token || service_user.create_access_token
+
+# Return to AI (SPEC FR-OWN-005/FR-HO-006): staff apply RETURN_TO_AI_LABEL to
+# hand a conversation back; the AI service applies HUMAN_HANDLING_LABEL on
+# handoff so the state is visible in the conversation list. Titles must match
+# services/ai/src/ai_service/main.py's HUMAN_HANDLING_LABEL/RETURN_TO_AI_LABEL
+# exactly -- Chatwoot lowercases label titles on save, and the Python service
+# only ever sends the lowercase form, so no mismatch in practice.
+[
+  ['human-handling', 'เจ้าหน้าที่กำลังดูแล (Human Active)'],
+  ['return-to-ai', 'ส่งกลับให้ AI ดูแลต่อ (Return to AI)'],
+].each do |title, description|
+  Label.find_or_create_by!(title: title, account_id: account.id) do |record|
+    record.description = description
+    record.color = '#1f93ff'
+  end
+end
 
 webhook_token = ENV.fetch('CHATWOOT_WEBHOOK_TOKEN')
 ai_hostname = ENV.fetch('AI_HOSTNAME', '').strip

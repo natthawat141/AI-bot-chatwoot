@@ -43,6 +43,10 @@ export const routes = {
         update: (id: number) => admin(`/knowledge/${id}`),
         destroy: (id: number) => admin(`/knowledge/${id}`),
     },
+    businessProfile: {
+        edit: admin('/business-profile'),
+        update: admin('/business-profile'),
+    },
     apiTokens: {
         index: admin('/api-tokens'),
         store: admin('/api-tokens'),

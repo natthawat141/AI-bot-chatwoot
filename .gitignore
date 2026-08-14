@@ -25,3 +25,8 @@ public/build/
 *.sqlite
 storage/logs/*
 !storage/logs/.gitignore
+
+# Local deployment docs
+DEPLOYMENT.md
+DEPLOYMENT*.md
+

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\BotInteractionController;
+use App\Http\Controllers\Api\BusinessProfileApiController;
 use App\Http\Controllers\Api\CatalogSearchController;
 use App\Http\Controllers\Api\KnowledgeApiController;
 use Illuminate\Support\Facades\Route;
@@ -15,6 +16,7 @@ Route::middleware(['api.token:read', 'throttle:120,1'])->prefix('v1')->name('api
     Route::get('/packages', [KnowledgeApiController::class, 'packages'])->name('packages');
     Route::get('/faqs', [KnowledgeApiController::class, 'faqs'])->name('faqs');
     Route::get('/knowledge', [KnowledgeApiController::class, 'knowledge'])->name('knowledge');
+    Route::get('/business-profile', [BusinessProfileApiController::class, 'show'])->name('business-profile');
     Route::post('/catalog/search', [CatalogSearchController::class, 'search'])->name('catalog.search');
     Route::get('/catalog/{package}', [CatalogSearchController::class, 'show'])->name('catalog.show');
 });

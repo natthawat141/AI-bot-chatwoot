@@ -14,6 +14,7 @@ import {
     Sun,
     CheckCircle2,
     AlertCircle,
+    Building2,
 } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 import type { PageProps } from '@/types';
@@ -33,6 +34,7 @@ const nav: NavItem[] = [
     { label: 'แพ็กเกจ', href: routes.packages.index, icon: Package, match: '/admin/packages' },
     { label: 'คำถามพบบ่อย', href: routes.faqs.index, icon: HelpCircle, match: '/admin/faqs' },
     { label: 'คลังความรู้', href: routes.knowledge.index, icon: BookOpen, match: '/admin/knowledge' },
+    { label: 'โปรไฟล์ธุรกิจ', href: routes.businessProfile.edit, icon: Building2, match: '/admin/business-profile' },
     { label: 'นำเข้าแพ็กเกจ', href: routes.imports.index, icon: FileSpreadsheet, match: '/admin/imports' },
     { label: 'โทเคน API', href: routes.apiTokens.index, icon: KeyRound, match: '/admin/api-tokens' },
 ];

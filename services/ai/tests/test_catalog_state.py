@@ -4,6 +4,7 @@ import json
 import httpx
 
 from ai_service.main import (
+    ZERO_RESULT_CLARIFICATION,
     apply_resets,
     detect_intent,
     merge_catalog_filters,
@@ -119,54 +120,62 @@ def test_management_knowledge_does_not_fallback_to_unrelated_rows() -> None:
     ]
 
 
-def test_process_handoffs_when_knowledge_context_is_empty() -> None:
-    class EmptyKnowledgeTransport:
-        def __init__(self) -> None:
-            self.attributes: dict[str, object] = {}
-            self.public_messages = 0
+class _EmptyKnowledgeTransport:
+    def __init__(self) -> None:
+        self.attributes: dict[str, object] = {}
+        self.public_messages: list[str] = []
 
-        def __call__(self, request: httpx.Request) -> httpx.Response:
-            path = request.url.path
-            if request.url.host == "openrouter.ai":
-                return httpx.Response(200, json={"choices": [{"message": {"content": "ข้อมูลที่ไม่ควรแต่งขึ้น"}}]})
-            if path.endswith("/conversations/7") and request.method == "GET":
-                return httpx.Response(200, json={
-                    "status": "open",
-                    "inbox_id": 1,
-                    "meta": {"assignee": {"bot_type": "webhook"}},
-                    "custom_attributes": self.attributes,
-                })
-            if path.endswith("/messages") and request.method == "GET":
-                return httpx.Response(200, json={"payload": []})
-            if path.endswith("/custom_attributes") and request.method == "POST":
-                payload = json.loads(request.content)
-                self.attributes.update(payload["custom_attributes"])
-                return httpx.Response(200, json={})
-            if path.endswith("/messages") and request.method == "POST":
-                if json.loads(request.content).get("private") is not True:
-                    self.public_messages += 1
-                return httpx.Response(200, json={})
-            if request.method == "GET" and path.endswith(("/faqs", "/knowledge")):
-                return httpx.Response(200, json={"data": []})
+    def __call__(self, request: httpx.Request) -> httpx.Response:
+        path = request.url.path
+        if request.url.host == "openrouter.ai":
+            return httpx.Response(200, json={"choices": [{"message": {"content": "ข้อมูลที่ไม่ควรแต่งขึ้น"}}]})
+        if path.endswith("/conversations/7") and request.method == "GET":
+            return httpx.Response(200, json={
+                "status": "open",
+                "inbox_id": 1,
+                "meta": {"assignee": {"bot_type": "webhook"}},
+                "custom_attributes": self.attributes,
+            })
+        if path.endswith("/messages") and request.method == "GET":
+            return httpx.Response(200, json={"payload": []})
+        if path.endswith("/custom_attributes") and request.method == "POST":
+            payload = json.loads(request.content)
+            self.attributes.update(payload["custom_attributes"])
+            return httpx.Response(200, json={})
+        if path.endswith("/messages") and request.method == "POST":
+            body = json.loads(request.content)
+            if body.get("private") is not True:
+                self.public_messages.append(body["content"])
+            return httpx.Response(200, json={})
+        if request.method == "GET" and path.endswith(("/faqs", "/knowledge")):
             return httpx.Response(200, json={"data": []})
+        return httpx.Response(200, json={"data": []})
 
-    async def scenario() -> EmptyKnowledgeTransport:
-        transport = EmptyKnowledgeTransport()
-        settings = Settings(
-            management_base_url="http://management",
-            management_token="management-token",
-            chatwoot_base_url="http://chatwoot",
-            chatwoot_bot_token="chatwoot-token",
-            chatwoot_account_id=1,
-            chatwoot_team_id=2,
-            webhook_token="webhook-token",
-            openrouter_api_key="openrouter-key",
-            openrouter_model="test-model",
-            allowed_inbox_ids=frozenset(),
-            redis_url="redis://redis",
-        )
+
+def _empty_knowledge_settings() -> Settings:
+    return Settings(
+        management_base_url="http://management",
+        management_token="management-token",
+        chatwoot_base_url="http://chatwoot",
+        chatwoot_bot_token="chatwoot-token",
+        chatwoot_account_id=1,
+        chatwoot_team_id=2,
+        webhook_token="webhook-token",
+        openrouter_api_key="openrouter-key",
+        openrouter_model="test-model",
+        allowed_inbox_ids=frozenset(),
+        redis_url="redis://redis",
+    )
+
+
+def test_process_asks_one_clarification_before_handoff_on_empty_knowledge() -> None:
+    """SPEC FR-AI-003/§5.5: a single empty-context knowledge question gets one
+    focused clarification, not an immediate handoff -- the AI stays eligible."""
+
+    async def scenario() -> _EmptyKnowledgeTransport:
+        transport = _EmptyKnowledgeTransport()
         async with httpx.AsyncClient(transport=httpx.MockTransport(transport)) as client:
-            await process(settings, {
+            await process(_empty_knowledge_settings(), {
                 "account": {"id": 1},
                 "message": {
                     "id": 1,
@@ -179,9 +188,33 @@ def test_process_handoffs_when_knowledge_context_is_empty() -> None:
 
     transport = asyncio.run(scenario())
 
+    assert transport.attributes["ai_mode"] == "ai"
+    assert "ai_handoff_reason" not in transport.attributes
+    assert transport.attributes["ai_zero_result_streak"] == 1
+    assert transport.public_messages == [ZERO_RESULT_CLARIFICATION]
+
+
+def test_process_handoffs_on_second_consecutive_empty_knowledge_answer() -> None:
+    async def scenario() -> _EmptyKnowledgeTransport:
+        transport = _EmptyKnowledgeTransport()
+        async with httpx.AsyncClient(transport=httpx.MockTransport(transport)) as client:
+            for message_id, content in ((1, "นโยบายที่ไม่มีข้อมูล"), (2, "ยังไม่มีข้อมูลอีกครั้ง")):
+                await process(_empty_knowledge_settings(), {
+                    "account": {"id": 1},
+                    "message": {
+                        "id": message_id,
+                        "content": content,
+                        "message_type": "incoming",
+                        "conversation": {"id": 7},
+                    },
+                }, client)
+        return transport
+
+    transport = asyncio.run(scenario())
+
     assert transport.attributes["ai_mode"] == "human"
     assert transport.attributes["ai_handoff_reason"] == "cannot_confirm"
-    assert transport.public_messages == 1
+    assert transport.public_messages == [ZERO_RESULT_CLARIFICATION, "รับเรื่องแล้วครับ กำลังส่งต่อให้ทีมเจ้าหน้าที่ดูแลต่อให้"]
 
 
 def test_ordinal_reference() -> None:

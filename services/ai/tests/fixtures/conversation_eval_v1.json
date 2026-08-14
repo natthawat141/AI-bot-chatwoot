@@ -1,0 +1,198 @@
+{
+  "version": 1,
+  "source": "synthetic -- see README.md for provenance and required upgrade before trusting as a real quality gate",
+  "cases": [
+    {
+      "id": "identity_question_mid_conversation",
+      "messages": [
+        {"role": "customer", "content": "Hi"},
+        {"role": "bot", "content": "Hi! How can I help you today?"},
+        {"role": "customer", "content": "คุณคือใคร"}
+      ],
+      "expected_routing": {"action": "answer"},
+      "notes": "Modeled directly on the real LINE conversation reviewed this session, where this exact message caused an immediate handoff with zero attempt to answer. Must now get a real reply from Business Profile identity, not a handoff."
+    },
+    {
+      "id": "greeting_only",
+      "messages": [
+        {"role": "customer", "content": "สวัสดีครับ"}
+      ],
+      "expected_routing": {"action": "answer"},
+      "notes": "Plain greeting, no question yet. Should not search catalog/knowledge or handoff."
+    },
+    {
+      "id": "thanks_after_answer",
+      "messages": [
+        {"role": "customer", "content": "มีคอนโดบางนาไหม"},
+        {"role": "bot", "content": "มี 2 รายการครับ..."},
+        {"role": "customer", "content": "ขอบคุณครับ"}
+      ],
+      "expected_routing": {"action": "answer"},
+      "notes": "Closing pleasantry, not a new catalog/knowledge question. Must not repeat the earlier answer or re-search."
+    },
+    {
+      "id": "catalog_condo_budget",
+      "messages": [
+        {"role": "customer", "content": "มีคอนโดบางนา งบไม่เกิน 4 ล้านไหม"}
+      ],
+      "expected_routing": {"action": "catalog", "filters": {"category_slug": "condo", "location": "บางนา", "price_max": 4000000}},
+      "notes": "AC-005 in SPEC.md. Filters must be validated structured fields, never invented facts beyond what search returns."
+    },
+    {
+      "id": "catalog_followup_bedrooms",
+      "messages": [
+        {"role": "customer", "content": "มีคอนโดบางนา งบไม่เกิน 4 ล้านไหม"},
+        {"role": "bot", "content": "มี 3 รายการครับ ..."},
+        {"role": "customer", "content": "เอา 2 ห้องนอน"}
+      ],
+      "expected_routing": {"action": "catalog", "filters": {"category_slug": "condo", "location": "บางนา", "price_max": 4000000, "bedrooms_gte": 2}},
+      "notes": "Location and price from turn 1 must persist; only bedrooms is added. Covered by test_process_keeps_catalog_context_and_uses_detail_endpoint."
+    },
+    {
+      "id": "catalog_ordinal_reference",
+      "messages": [
+        {"role": "customer", "content": "มีคอนโดบางนา งบไม่เกิน 4 ล้านไหม"},
+        {"role": "bot", "content": "มี 3 รายการครับ ..."},
+        {"role": "customer", "content": "เอา 2 ห้องนอน"},
+        {"role": "bot", "content": "เหลือ 2 รายการครับ ..."},
+        {"role": "customer", "content": "ตัวแรกกี่ตารางเมตร"}
+      ],
+      "expected_routing": {"action": "catalog", "uses_detail_endpoint": true},
+      "notes": "Must come from GET /catalog/{id}, never the LLM guessing a number. Covered by test_process_keeps_catalog_context_and_uses_detail_endpoint."
+    },
+    {
+      "id": "catalog_transaction_type_switch",
+      "messages": [
+        {"role": "customer", "content": "มีคอนโดบางนา งบไม่เกิน 4 ล้านไหม"},
+        {"role": "bot", "content": "มี 3 รายการครับ ..."},
+        {"role": "customer", "content": "เอา 2 ห้องนอน"},
+        {"role": "bot", "content": "เหลือ 2 รายการครับ ..."},
+        {"role": "customer", "content": "แล้วถ้าเช่าล่ะ"}
+      ],
+      "expected_routing": {"action": "catalog", "filters": {"transaction_type": "rent", "location": "บางนา", "bedrooms_gte": 2}},
+      "notes": "transaction_type is overwritten to rent; location and bedrooms carry over."
+    },
+    {
+      "id": "catalog_zero_results",
+      "messages": [
+        {"role": "customer", "content": "มีคอนโดดวงจันทร์ราคา 1 บาทไหม"}
+      ],
+      "expected_routing": {"action": "catalog_zero_result"},
+      "notes": "AC-007: no invented listings, no silently relaxed filters. Fixed honest zero-result message."
+    },
+    {
+      "id": "non_negotiable_number_word",
+      "messages": [
+        {"role": "customer", "content": "คอนโดอยู่ได้ 3 คนไหม"}
+      ],
+      "expected_routing": {"action": "answer"},
+      "notes": "Regression guard for the old bug: substring \"คน\" must never trigger handoff on its own. Already covered by test_handoff.py::test_common_business_questions_do_not_handoff."
+    },
+    {
+      "id": "payment_method_question",
+      "messages": [
+        {"role": "customer", "content": "ชำระเงินยังไงครับ"}
+      ],
+      "expected_routing": {"action": "answer", "source": "knowledge", "search_query": "ชำระเงิน"},
+      "notes": "Must answer from FAQ, not handoff. Already covered by test_handoff.py."
+    },
+    {
+      "id": "knowledge_transfer_fee",
+      "messages": [
+        {"role": "customer", "content": "ค่าโอนใครจ่าย"}
+      ],
+      "expected_routing": {"action": "answer", "source": "knowledge"},
+      "notes": "Regression case for the Thai substring-search fix (Phase 3): the seeded FAQ title is \"ค่าธรรมเนียมการโอนกรรมสิทธิ์ใครเป็นคนจ่าย\" -- a single whole-phrase LIKE would not have matched this shorter phrasing."
+    },
+    {
+      "id": "knowledge_consignment_process",
+      "messages": [
+        {"role": "customer", "content": "อยากฝากขายบ้านต้องทำยังไง"}
+      ],
+      "expected_routing": {"action": "answer", "source": "knowledge"},
+      "notes": "Should surface the seeded consignment FAQ/knowledge entry, phrased naturally rather than as a bulleted policy dump."
+    },
+    {
+      "id": "explicit_human_request",
+      "messages": [
+        {"role": "customer", "content": "ขอคุยกับเจ้าหน้าที่"}
+      ],
+      "expected_routing": {"action": "handoff", "handoff_reason": "customer_request"},
+      "notes": "Must still handoff immediately -- explicit requests are not affected by the naturalness work. Covered by test_handoff.py."
+    },
+    {
+      "id": "complaint",
+      "messages": [
+        {"role": "customer", "content": "ไม่พอใจมากกับบริการ ขอร้องเรียน"}
+      ],
+      "expected_routing": {"action": "handoff", "handoff_reason": "complaint"},
+      "notes": "Complaint phrases must still handoff unconditionally."
+    },
+    {
+      "id": "payment_problem",
+      "messages": [
+        {"role": "customer", "content": "มัดจำโอนแล้วไม่เข้าครับ"}
+      ],
+      "expected_routing": {"action": "handoff", "handoff_reason": "payment_problem"},
+      "notes": "Payment failures must still handoff unconditionally -- never let the model reassure the customer about money it can't verify."
+    },
+    {
+      "id": "unrelated_niche_question_first_miss",
+      "messages": [
+        {"role": "customer", "content": "รับแลกเปลี่ยนทรัพย์กับต่างประเทศไหม"}
+      ],
+      "expected_routing": {"action": "clarify"},
+      "notes": "Phase 4.3: genuinely no knowledge match -- first miss should ask one focused clarification, not hand off immediately. Covered by test_process_asks_one_clarification_before_handoff_on_empty_knowledge."
+    },
+    {
+      "id": "unrelated_niche_question_second_miss",
+      "messages": [
+        {"role": "customer", "content": "รับแลกเปลี่ยนทรัพย์กับต่างประเทศไหม"},
+        {"role": "bot", "content": "ขอโทษครับ ตอนนี้ผมไม่แน่ใจคำตอบที่ชัดเจน รบกวนเล่ารายละเอียดเพิ่มอีกนิดได้ไหมครับ ว่าอยากทราบเรื่องอะไรโดยเฉพาะ"},
+        {"role": "customer", "content": "คือแลกทรัพย์กันแทนเงินสดน่ะ"}
+      ],
+      "expected_routing": {"action": "handoff", "handoff_reason": "cannot_confirm"},
+      "notes": "Second consecutive empty-context knowledge miss must fail closed to handoff, not loop asking forever. Covered by test_process_handoffs_on_second_consecutive_empty_knowledge_answer."
+    },
+    {
+      "id": "knowledge_miss_then_catalog_resets_streak",
+      "messages": [
+        {"role": "customer", "content": "รับแลกเปลี่ยนทรัพย์กับต่างประเทศไหม"},
+        {"role": "bot", "content": "ขอโทษครับ ตอนนี้ผมไม่แน่ใจคำตอบที่ชัดเจน รบกวนเล่ารายละเอียดเพิ่มอีกนิดได้ไหมครับ ว่าอยากทราบเรื่องอะไรโดยเฉพาะ"},
+        {"role": "customer", "content": "งั้นมีคอนโดบางนาไหม"},
+        {"role": "bot", "content": "มี 3 รายการครับ ..."},
+        {"role": "customer", "content": "แล้วมีรับดูแลสวนบนดาดฟ้าไหม"}
+      ],
+      "expected_routing": {"action": "clarify"},
+      "notes": "A successful catalog turn in between should reset the zero-result streak, so this later unrelated miss gets a fresh clarification, not an immediate handoff."
+    },
+    {
+      "id": "multi_turn_small_talk_then_catalog",
+      "messages": [
+        {"role": "customer", "content": "สวัสดีครับ"},
+        {"role": "bot", "content": "สวัสดีครับ ยินดีให้บริการครับ"},
+        {"role": "customer", "content": "ทำงานยังไง ตอบเองเลยหรอ"},
+        {"role": "bot", "content": "ใช่ครับ ผมช่วยตอบคำถามเบื้องต้นได้เลย ถ้าซับซ้อนจะส่งต่อทีมงานให้ครับ"},
+        {"role": "customer", "content": "โอเค งั้นมีบ้านเดี่ยวแถวศรีนครินทร์ไหม"}
+      ],
+      "expected_routing": {"action": "catalog", "filters": {"category_slug": "house", "location": "ศรีนครินทร์"}},
+      "notes": "Small talk about the bot itself should not derail catalog filter extraction on the very next real question."
+    },
+    {
+      "id": "business_hours_question",
+      "messages": [
+        {"role": "customer", "content": "เปิดกี่โมงครับ"}
+      ],
+      "expected_routing": {"action": "answer"},
+      "notes": "Should answer from Business Profile business_hours field once wired (Phase 2.1/4.2), not treat as a zero-result knowledge miss."
+    },
+    {
+      "id": "resolved_conversation_no_reply",
+      "messages": [
+        {"role": "customer", "content": "ขอบคุณครับ พอแล้ว"}
+      ],
+      "expected_routing": {"action": "ignored", "reason": "status_resolved"},
+      "notes": "If the conversation was already marked resolved by a human, the AI must stay silent regardless of message content (FR-OWN-004). Not a prompt-quality case -- ownership check only."
+    }
+  ]
+}

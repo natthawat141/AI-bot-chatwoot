@@ -58,10 +58,16 @@ flowchart LR
 3. The webhook validates the token, writes the event to Redis, and returns `202 Accepted`.
 4. The AI Worker consumes the event, retries transient failures up to three times, and moves
    exhausted events to a dead-letter queue.
-5. The worker reads approved catalog/knowledge records from Laravel and sends grounded replies
+5. The worker reads approved catalog/knowledge records -- and, for identity/greeting/business-meta
+   questions, the cached Business Profile singleton -- from Laravel and sends grounded replies
    through the Chatwoot API.
 6. Requests for a person, a payment/refund problem, or other handoff conditions change the
-   conversation to human mode and assign it to the shared handoff team.
+   conversation to human mode, assign it to the shared handoff team, and apply the `คนดูแลอยู่`
+   Chatwoot label so staff can see the state without opening custom attributes.
+7. Chatwoot also delivers `conversation_updated` events (label/status/assignment changes) to the
+   same webhook. Staff apply the `ส่งกลับ-ai` label to explicitly hand a conversation back to the
+   AI; the worker refetches live state, clears both labels, unassigns the human agent, and resets
+   `ai_mode` to `ai`.
 
 ## Ownership and security boundaries
 

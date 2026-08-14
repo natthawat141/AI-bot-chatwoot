@@ -26,6 +26,9 @@ class KnowledgeApiController extends Controller
 
     private const MAX_LIMIT = 500;
 
+    /** Bounds the OR/relevance-score clause size for a single search request. */
+    private const MAX_SEARCH_TERMS = 40;
+
     public function meta(Request $request): JsonResponse
     {
         $packages = ServicePackage::query()->active()->published()->effective();
@@ -180,10 +183,19 @@ class KnowledgeApiController extends Controller
     }
 
     /**
-     * Apply a bounded, escaped substring search for the AI service.
+     * Apply a bounded, escaped multi-term search for the AI service.
      *
-     * The API intentionally keeps this as a simple database LIKE query. Thai
-     * question cleanup happens in the AI service before this endpoint is called.
+     * Thai script rarely has spaces between words, so a single whole-string
+     * LIKE only matches a near-identical phrase and misses close questions
+     * (e.g. "ค่าโอนใครจ่าย" against a FAQ titled "ค่าธรรมเนียมการโอนกรรมสิทธิ์").
+     * `searchTerms()` breaks the query into the whole phrase, whitespace
+     * tokens, and 2-character bigrams and scores each row by how many of
+     * those terms it matches. A single short bigram (e.g. "เง") is common
+     * enough in unrelated Thai text to match by coincidence, so a floor of
+     * roughly half the terms is required -- this is what keeps the original
+     * "no fallback to unrelated rows" contract: a genuinely close rephrasing
+     * shares most of its bigrams with the target text, a coincidental
+     * one-syllable overlap does not.
      *
      * @param  Builder<\Illuminate\Database\Eloquent\Model>  $query
      * @param  array<int, string>  $columns
@@ -196,14 +208,69 @@ class KnowledgeApiController extends Controller
             return;
         }
 
-        $escaped = addcslashes($search, '\\%_');
-        $like = '%'.$escaped.'%';
+        $terms = $this->searchTerms($search);
 
-        $query->where(function (Builder $nested) use ($like, $columns): void {
-            foreach ($columns as $column) {
-                $nested->orWhere($column, 'like', $like);
+        if ($terms === []) {
+            return;
+        }
+
+        [$scoreSql, $bindings] = $this->relevanceScore($terms, $columns);
+        $threshold = max(2, (int) ceil(count($terms) / 2));
+
+        $query->whereRaw("({$scoreSql}) >= ?", [...$bindings, $threshold]);
+        $query->orderByRaw("({$scoreSql}) DESC", $bindings);
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function searchTerms(string $search): array
+    {
+        $terms = [$search];
+
+        foreach (preg_split('/\s+/u', $search, -1, PREG_SPLIT_NO_EMPTY) ?: [] as $word) {
+            if (mb_strlen($word) >= 2) {
+                $terms[] = $word;
             }
-        });
+        }
+
+        $chars = preg_split('//u', $search, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+        for ($i = 0; $i < count($chars) - 1; $i++) {
+            if ($chars[$i] === ' ' || $chars[$i + 1] === ' ') {
+                continue;
+            }
+            $terms[] = $chars[$i].$chars[$i + 1];
+        }
+
+        return array_slice(array_values(array_unique($terms)), 0, self::MAX_SEARCH_TERMS);
+    }
+
+    /**
+     * Ranks rows by how many search terms they matched, so a near-exact
+     * phrase match (or a row matching many bigrams) outranks a row that only
+     * happens to contain one common two-character sequence.
+     *
+     * $columns is always one of the controller's own hardcoded allowlists,
+     * never request input, so interpolating it into raw SQL here is safe.
+     *
+     * @param  array<int, string>  $terms
+     * @param  array<int, string>  $columns
+     * @return array{0: string, 1: array<int, string>}
+     */
+    private function relevanceScore(array $terms, array $columns): array
+    {
+        $expressions = [];
+        $bindings = [];
+
+        foreach ($terms as $term) {
+            $like = '%'.addcslashes($term, '\\%_').'%';
+            foreach ($columns as $column) {
+                $expressions[] = "(CASE WHEN {$column} LIKE ? THEN 1 ELSE 0 END)";
+                $bindings[] = $like;
+            }
+        }
+
+        return [implode(' + ', $expressions), $bindings];
     }
 
     private function limit(Request $request): int

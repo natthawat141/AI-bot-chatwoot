@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\ApiTokenController;
+use App\Http\Controllers\Admin\BusinessProfileController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\FaqController;
 use App\Http\Controllers\Admin\GuideController;
@@ -39,6 +40,10 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::resource('knowledge', KnowledgeEntryController::class)
         ->parameters(['knowledge' => 'knowledge'])
         ->except('show');
+
+    // Singleton settings page: structured business facts the AI composes into its prompt.
+    Route::get('/business-profile', [BusinessProfileController::class, 'edit'])->name('business-profile.edit');
+    Route::put('/business-profile', [BusinessProfileController::class, 'update'])->name('business-profile.update');
 
     // Revocable hashed bearer tokens for the knowledge API.
     Route::get('/api-tokens', [ApiTokenController::class, 'index'])->name('api-tokens.index');
