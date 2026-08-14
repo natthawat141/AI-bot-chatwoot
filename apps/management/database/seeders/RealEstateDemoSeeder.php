@@ -31,6 +31,21 @@ class RealEstateDemoSeeder extends Seeder
         $this->seedCatalog($categories);
         $this->seedFaqs();
         $this->seedKnowledge();
+        $this->seedBusinessProfile();
+    }
+
+    private function seedBusinessProfile(): void
+    {
+        \App\Models\BusinessProfile::current()->update([
+            'business_name' => 'บิว Property (Bill Property)',
+            'business_description' => 'ตัวแทนและที่ปรึกษาด้านอสังหาริมทรัพย์ครบวงจร บริการรับฝากขาย ฝากเช่า จัดหาบ้าน คอนโด ที่ดิน และอาคารพาณิชย์ในกรุงเทพฯ และปริมณฑล พร้อมดูแลสินเชื่อและนิติกรรมสัญญาครบวงจร',
+            'services_offered' => 'รับฝากขาย-ฝากเช่า คอนโด/บ้าน/ที่ดิน, จัดหาทรัพย์ตามงบประมาณ, ให้คำปรึกษาสินเชื่อและยื่นกู้ธนาคารฟรี, บริการพาโอนกรรมสิทธิ์ ณ สำนักงานที่ดิน',
+            'service_areas' => 'กรุงเทพฯ และปริมณฑล (เน้นโซนสุขุมวิท, บางนา, ศรีนครินทร์, อ่อนนุช, ลาดกระบัง, สมุทรปราการ)',
+            'business_hours' => 'เปิดทำการทุกวัน จันทร์ - อาทิตย์ เวลา 09:00 - 19:00 น.',
+            'contact_channels' => 'LINE: @billproperty, โทร: 081-234-5678, สำนักงาน: บางนา-ตราด กม.4 กรุงเทพฯ',
+            'conversation_tone' => 'สุภาพ เป็นกันเอง มีความเชี่ยวชาญ ให้ข้อมูลตรงไปตรงมา ชัดเจน น่าเชื่อถือ ลงท้ายด้วยครับ',
+            'always_escalate_topics' => 'เรื่องการโอนเงินจอง/มัดจำ, การร้องเรียน, สัญญาจะซื้อจะขายที่ต้องลงนามเฉพาะบุคคล',
+        ]);
     }
 
     /**
