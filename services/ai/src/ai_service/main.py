@@ -87,6 +87,7 @@ class Settings:
     openrouter_model: str
     allowed_inbox_ids: frozenset[int]
     redis_url: str
+    line_channel_access_token: str = ""
     management_timeout_seconds: float = 5
     chatwoot_timeout_seconds: float = 8
     openrouter_timeout_seconds: float = 15
@@ -124,6 +125,7 @@ class Settings:
             openrouter_model=os.getenv("OPENROUTER_MODEL", "deepseek/deepseek-v4-flash-0731"),
             allowed_inbox_ids=frozenset(inboxes),
             redis_url=os.getenv("AI_QUEUE_REDIS_URL", os.getenv("REDIS_URL", "")).strip(),
+            line_channel_access_token=os.getenv("LINE_CHANNEL_ACCESS_TOKEN", "").strip(),
             management_timeout_seconds=number("MANAGEMENT_TIMEOUT_SECONDS", 5),
             chatwoot_timeout_seconds=number("CHATWOOT_TIMEOUT_SECONDS", 8),
             openrouter_timeout_seconds=number("OPENROUTER_TIMEOUT_SECONDS", 15),
@@ -253,6 +255,39 @@ class ManagementClient:
         payload = await self._request_raw("GET", "/api/v1/business-profile")
         data = payload.get("data")
         return data if isinstance(data, dict) else {}
+
+    async def flex_carousel(self, category_slug: str | None = None, limit: int = 5) -> dict[str, Any] | None:
+        try:
+            params: dict[str, Any] = {"limit": limit}
+            if category_slug:
+                params["category_slug"] = category_slug
+            payload = await self._request_raw("GET", "/api/v1/flex/carousel", params=params)
+            return payload if isinstance(payload, dict) and payload.get("type") == "flex" else None
+        except Exception:
+            return None
+
+
+async def line_push_flex(client: httpx.AsyncClient, token: str, to: str, flex_payload: Mapping[str, Any]) -> bool:
+    if not token or not to or not to.startswith("U"):
+        return False
+    try:
+        res = await client.post(
+            "https://api.line.me/v2/bot/message/push",
+            headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+            json={
+                "to": to,
+                "messages": [dict(flex_payload)],
+            },
+            timeout=8.0,
+        )
+        if res.status_code == 200:
+            LOG.info("line_push_flex success to=%s", to)
+            return True
+        LOG.warning("line_push_flex failed status=%s body=%s", res.status_code, res.text)
+        return False
+    except Exception as exc:
+        LOG.warning("line_push_flex error: %s", exc)
+        return False
 
 
 def nested(payload: Mapping[str, Any], *keys: str | int) -> Any:
@@ -720,6 +755,22 @@ async def _process_locked(
             LOG.warning("answer account=%s conversation=%s result=delivery_unknown", account_id, conversation_id)
             return
         raise
+
+    # If this was a catalog search with results and customer is on LINE, push Flex Carousel
+    if intent == "catalog" and records and settings.line_channel_access_token:
+        category_slug = current_filters.get("category_slug") if isinstance(current_filters, Mapping) else None
+        line_user_id = (
+            nested(latest, "contact_inbox", "source_id")
+            or nested(latest, "meta", "sender", "identifier")
+            or nested(latest, "contact", "identifier")
+            or nested(latest, "meta", "sender", "additional_attributes", "social_id")
+            or ""
+        )
+        if isinstance(line_user_id, str) and line_user_id.startswith("U"):
+            flex_payload = await management.flex_carousel(category_slug, limit=5)
+            if flex_payload:
+                await line_push_flex(client, settings.line_channel_access_token, line_user_id, flex_payload)
+
     try:
         await chatwoot.custom_attributes(account_id, conversation_id, {"ai_completed_message_id": str(message_id), "ai_mode": "ai"})
     except UpstreamError:
