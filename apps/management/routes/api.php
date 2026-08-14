@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\BotInteractionController;
 use App\Http\Controllers\Api\BusinessProfileApiController;
 use App\Http\Controllers\Api\CatalogSearchController;
+use App\Http\Controllers\Api\FlexMessageApiController;
 use App\Http\Controllers\Api\KnowledgeApiController;
 use Illuminate\Support\Facades\Route;
 
@@ -19,6 +20,8 @@ Route::middleware(['api.token:read', 'throttle:120,1'])->prefix('v1')->name('api
     Route::get('/business-profile', [BusinessProfileApiController::class, 'show'])->name('business-profile');
     Route::post('/catalog/search', [CatalogSearchController::class, 'search'])->name('catalog.search');
     Route::get('/catalog/{package}', [CatalogSearchController::class, 'show'])->name('catalog.show');
+    Route::get('/flex/carousel', [FlexMessageApiController::class, 'carousel'])->name('flex.carousel');
+    Route::get('/flex/catalog/{package}', [FlexMessageApiController::class, 'show'])->name('flex.show');
 });
 
 Route::post('/v1/interactions', [BotInteractionController::class, 'store'])
