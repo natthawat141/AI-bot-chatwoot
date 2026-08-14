@@ -3,12 +3,13 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\BusinessProfile;
 use App\Models\ServicePackage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 /**
- * Generates official LINE Flex Message (Bubble & Carousel) JSON for properties.
+ * Generates official LINE Flex Message (Bubble & Carousel) JSON for properties and core business services.
  */
 class FlexMessageApiController extends Controller
 {
@@ -50,6 +51,302 @@ class FlexMessageApiController extends Controller
             'contents' => [
                 'type' => 'carousel',
                 'contents' => $bubbles,
+            ],
+        ]);
+    }
+
+    public function loan(): JsonResponse
+    {
+        return response()->json([
+            'type' => 'flex',
+            'altText' => '💰 บริการปรึกษาสินเชื่อบ้าน - บิว Property',
+            'contents' => [
+                'type' => 'bubble',
+                'size' => 'kilo',
+                'header' => [
+                    'type' => 'box',
+                    'layout' => 'vertical',
+                    'backgroundColor' => '#0F172A',
+                    'paddingAll' => '16px',
+                    'contents' => [
+                        [
+                            'type' => 'text',
+                            'text' => '💰 ปรึกษาสินเชื่อบ้าน & กู้ธนาคาร',
+                            'color' => '#FFFFFF',
+                            'size' => 'md',
+                            'weight' => 'bold',
+                        ],
+                        [
+                            'type' => 'text',
+                            'text' => 'บริการเช็กวงเงินและประสานงานสถาบันการเงินฟรี',
+                            'color' => '#94A3B8',
+                            'size' => 'xs',
+                            'margin' => 'xs',
+                        ],
+                    ],
+                ],
+                'body' => [
+                    'type' => 'box',
+                    'layout' => 'vertical',
+                    'spacing' => 'sm',
+                    'paddingAll' => '16px',
+                    'contents' => [
+                        [
+                            'type' => 'box',
+                            'layout' => 'horizontal',
+                            'spacing' => 'sm',
+                            'contents' => [
+                                ['type' => 'text', 'text' => '🏦', 'size' => 'sm', 'flex' => 0],
+                                ['type' => 'text', 'text' => 'พันธมิตรธนาคารชั้นนำ วงเงินกู้สูงสุด 100%', 'size' => 'xs', 'color' => '#334155', 'weight' => 'bold', 'wrap' => true],
+                            ],
+                        ],
+                        [
+                            'type' => 'box',
+                            'layout' => 'horizontal',
+                            'spacing' => 'sm',
+                            'contents' => [
+                                ['type' => 'text', 'text' => '📑', 'size' => 'sm', 'flex' => 0],
+                                ['type' => 'text', 'text' => 'ตรวจเช็กความพร้อมเอกสารและเครดิตบูโรเบื้องต้น', 'size' => 'xs', 'color' => '#334155', 'wrap' => true],
+                            ],
+                        ],
+                        [
+                            'type' => 'box',
+                            'layout' => 'horizontal',
+                            'spacing' => 'sm',
+                            'contents' => [
+                                ['type' => 'text', 'text' => '⚡', 'size' => 'sm', 'flex' => 0],
+                                ['type' => 'text', 'text' => 'ทราบผลเบื้องต้นไว ไม่มีค่าใช้จ่ายในการให้คำปรึกษา', 'size' => 'xs', 'color' => '#334155', 'wrap' => true],
+                            ],
+                        ],
+                    ],
+                ],
+                'footer' => [
+                    'type' => 'box',
+                    'layout' => 'vertical',
+                    'spacing' => 'sm',
+                    'paddingAll' => '12px',
+                    'contents' => [
+                        [
+                            'type' => 'button',
+                            'style' => 'primary',
+                            'color' => '#0F172A',
+                            'height' => 'sm',
+                            'action' => [
+                                'type' => 'message',
+                                'label' => 'ปรึกษาวงเงินกับเจ้าหน้าที่',
+                                'text' => 'สนใจปรึกษายื่นกู้สินเชื่อบ้าน ขอคุยกับเจ้าหน้าที่ครับ',
+                            ],
+                        ],
+                        [
+                            'type' => 'button',
+                            'style' => 'secondary',
+                            'height' => 'sm',
+                            'action' => [
+                                'type' => 'message',
+                                'label' => 'เอกสารที่ต้องใช้มีอะไรบ้าง',
+                                'text' => 'ยื่นกู้ซื้อบ้านต้องใช้เอกสารอะไรบ้างครับ',
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ]);
+    }
+
+    public function consignment(): JsonResponse
+    {
+        return response()->json([
+            'type' => 'flex',
+            'altText' => '📝 บริการฝากขาย-ฝากเช่า - บิว Property',
+            'contents' => [
+                'type' => 'bubble',
+                'size' => 'kilo',
+                'header' => [
+                    'type' => 'box',
+                    'layout' => 'vertical',
+                    'backgroundColor' => '#0F172A',
+                    'paddingAll' => '16px',
+                    'contents' => [
+                        [
+                            'type' => 'text',
+                            'text' => '📝 บริการฝากขาย - ฝากเช่า',
+                            'color' => '#FFFFFF',
+                            'size' => 'md',
+                            'weight' => 'bold',
+                        ],
+                        [
+                            'type' => 'text',
+                            'text' => 'ดูแลการตลาดและเอกสารสัญญาครบวงจร',
+                            'color' => '#94A3B8',
+                            'size' => 'xs',
+                            'margin' => 'xs',
+                        ],
+                    ],
+                ],
+                'body' => [
+                    'type' => 'box',
+                    'layout' => 'vertical',
+                    'spacing' => 'sm',
+                    'paddingAll' => '16px',
+                    'contents' => [
+                        [
+                            'type' => 'box',
+                            'layout' => 'horizontal',
+                            'spacing' => 'sm',
+                            'contents' => [
+                                ['type' => 'text', 'text' => '📸', 'size' => 'sm', 'flex' => 0],
+                                ['type' => 'text', 'text' => 'ถ่ายภาพและโปรโมททรัพย์ฟรีทุกแพลตฟอร์ม', 'size' => 'xs', 'color' => '#334155', 'weight' => 'bold', 'wrap' => true],
+                            ],
+                        ],
+                        [
+                            'type' => 'box',
+                            'layout' => 'horizontal',
+                            'spacing' => 'sm',
+                            'contents' => [
+                                ['type' => 'text', 'text' => '🤝', 'size' => 'sm', 'flex' => 0],
+                                ['type' => 'text', 'text' => 'คัดกรองผู้ซื้อ-ผู้เช่า และนัดหมายพาชมสถานที่จริง', 'size' => 'xs', 'color' => '#334155', 'wrap' => true],
+                            ],
+                        ],
+                        [
+                            'type' => 'box',
+                            'layout' => 'horizontal',
+                            'spacing' => 'sm',
+                            'contents' => [
+                                ['type' => 'text', 'text' => '⚖️', 'size' => 'sm', 'flex' => 0],
+                                ['type' => 'text', 'text' => 'จัดทำสัญญามาตรฐานและพาโอนกรรมสิทธิ์ ณ กรมที่ดิน', 'size' => 'xs', 'color' => '#334155', 'wrap' => true],
+                            ],
+                        ],
+                    ],
+                ],
+                'footer' => [
+                    'type' => 'box',
+                    'layout' => 'vertical',
+                    'spacing' => 'sm',
+                    'paddingAll' => '12px',
+                    'contents' => [
+                        [
+                            'type' => 'button',
+                            'style' => 'primary',
+                            'color' => '#0F172A',
+                            'height' => 'sm',
+                            'action' => [
+                                'type' => 'message',
+                                'label' => 'ต้องการฝากขายทรัพย์',
+                                'text' => 'อยากฝากขายบ้านหรือคอนโดครับ',
+                            ],
+                        ],
+                        [
+                            'type' => 'button',
+                            'style' => 'secondary',
+                            'height' => 'sm',
+                            'action' => [
+                                'type' => 'message',
+                                'label' => 'ต้องการฝากปล่อยเช่า',
+                                'text' => 'อยากฝากปล่อยเช่าบ้านหรือคอนโดครับ',
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ]);
+    }
+
+    public function about(): JsonResponse
+    {
+        $profile = BusinessProfile::current();
+
+        return response()->json([
+            'type' => 'flex',
+            'altText' => "🏢 ข้อมูลบริการ & เวลาทำการ - {$profile->business_name}",
+            'contents' => [
+                'type' => 'bubble',
+                'size' => 'kilo',
+                'header' => [
+                    'type' => 'box',
+                    'layout' => 'vertical',
+                    'backgroundColor' => '#0F172A',
+                    'paddingAll' => '16px',
+                    'contents' => [
+                        [
+                            'type' => 'text',
+                            'text' => "🏢 {$profile->business_name}",
+                            'color' => '#FFFFFF',
+                            'size' => 'md',
+                            'weight' => 'bold',
+                        ],
+                        [
+                            'type' => 'text',
+                            'text' => 'ตัวแทนและที่ปรึกษาด้านอสังหาริมทรัพย์ครบวงจร',
+                            'color' => '#94A3B8',
+                            'size' => 'xs',
+                            'margin' => 'xs',
+                        ],
+                    ],
+                ],
+                'body' => [
+                    'type' => 'box',
+                    'layout' => 'vertical',
+                    'spacing' => 'sm',
+                    'paddingAll' => '16px',
+                    'contents' => [
+                        [
+                            'type' => 'box',
+                            'layout' => 'horizontal',
+                            'spacing' => 'sm',
+                            'contents' => [
+                                ['type' => 'text', 'text' => '🕒', 'size' => 'sm', 'flex' => 0],
+                                ['type' => 'text', 'text' => $profile->business_hours ?: 'เปิดบริการทุกวัน 09:00 - 19:00 น.', 'size' => 'xs', 'color' => '#334155', 'weight' => 'bold', 'wrap' => true],
+                            ],
+                        ],
+                        [
+                            'type' => 'box',
+                            'layout' => 'horizontal',
+                            'spacing' => 'sm',
+                            'contents' => [
+                                ['type' => 'text', 'text' => '📍', 'size' => 'sm', 'flex' => 0],
+                                ['type' => 'text', 'text' => $profile->service_areas ?: 'กรุงเทพฯ และปริมณฑล', 'size' => 'xs', 'color' => '#334155', 'wrap' => true],
+                            ],
+                        ],
+                        [
+                            'type' => 'box',
+                            'layout' => 'horizontal',
+                            'spacing' => 'sm',
+                            'contents' => [
+                                ['type' => 'text', 'text' => '📞', 'size' => 'sm', 'flex' => 0],
+                                ['type' => 'text', 'text' => $profile->contact_channels ?: 'LINE: @billproperty | 081-234-5678', 'size' => 'xs', 'color' => '#334155', 'wrap' => true],
+                            ],
+                        ],
+                    ],
+                ],
+                'footer' => [
+                    'type' => 'box',
+                    'layout' => 'vertical',
+                    'spacing' => 'sm',
+                    'paddingAll' => '12px',
+                    'contents' => [
+                        [
+                            'type' => 'button',
+                            'style' => 'primary',
+                            'color' => '#0F172A',
+                            'height' => 'sm',
+                            'action' => [
+                                'type' => 'message',
+                                'label' => 'ติดต่อแอดมิน / เจ้าหน้าที่',
+                                'text' => 'ขอคุยกับเจ้าหน้าที่ครับ',
+                            ],
+                        ],
+                        [
+                            'type' => 'button',
+                            'style' => 'secondary',
+                            'height' => 'sm',
+                            'action' => [
+                                'type' => 'message',
+                                'label' => 'ดูคอนโดและบ้านเดี่ยว',
+                                'text' => 'สนใจดูคอนโดครับ มีโครงการไหนแนะนำบ้าง',
+                            ],
+                        ],
+                    ],
+                ],
             ],
         ]);
     }

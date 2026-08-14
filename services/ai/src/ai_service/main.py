@@ -266,6 +266,13 @@ class ManagementClient:
         except Exception:
             return None
 
+    async def flex_service_card(self, service_type: str) -> dict[str, Any] | None:
+        try:
+            payload = await self._request_raw("GET", f"/api/v1/flex/{service_type}")
+            return payload if isinstance(payload, dict) and payload.get("type") == "flex" else None
+        except Exception:
+            return None
+
 
 async def line_push_flex(client: httpx.AsyncClient, token: str, to: str, flex_payload: Mapping[str, Any]) -> bool:
     if not token or not to or not to.startswith("U"):
@@ -756,9 +763,8 @@ async def _process_locked(
             return
         raise
 
-    # If this was a catalog search with results and customer is on LINE, push Flex Carousel
-    if intent == "catalog" and records and settings.line_channel_access_token:
-        category_slug = current_filters.get("category_slug") if isinstance(current_filters, Mapping) else None
+    # If customer is on LINE, push corresponding Flex Card for rich interactive responses
+    if settings.line_channel_access_token:
         line_user_id = (
             nested(latest, "contact_inbox", "source_id")
             or nested(latest, "meta", "sender", "identifier")
@@ -767,9 +773,24 @@ async def _process_locked(
             or ""
         )
         if isinstance(line_user_id, str) and line_user_id.startswith("U"):
-            flex_payload = await management.flex_carousel(category_slug, limit=5)
-            if flex_payload:
-                await line_push_flex(client, settings.line_channel_access_token, line_user_id, flex_payload)
+            if intent == "catalog" and records:
+                category_slug = current_filters.get("category_slug") if isinstance(current_filters, Mapping) else None
+                flex_payload = await management.flex_carousel(category_slug, limit=5)
+                if flex_payload:
+                    await line_push_flex(client, settings.line_channel_access_token, line_user_id, flex_payload)
+            else:
+                lower_content = normalize_text(content)
+                service_card_type: str | None = None
+                if any(term in lower_content for term in ("สินเชื่อ", "กู้บ้าน", "กู้ธนาคาร", "ผ่อนบ้าน")):
+                    service_card_type = "loan"
+                elif any(term in lower_content for term in ("ฝากขาย", "ฝากเช่า", "ปล่อยเช่า", "ขายฝาก")):
+                    service_card_type = "consignment"
+                elif any(term in lower_content for term in ("เปิดกี่โมง", "เวลาทำการ", "บริการอะไรบ้าง", "ติดต่อช่องทางไหน", "ติดต่อได้ที่ไหน")):
+                    service_card_type = "about"
+                if service_card_type:
+                    flex_payload = await management.flex_service_card(service_card_type)
+                    if flex_payload:
+                        await line_push_flex(client, settings.line_channel_access_token, line_user_id, flex_payload)
 
     try:
         await chatwoot.custom_attributes(account_id, conversation_id, {"ai_completed_message_id": str(message_id), "ai_mode": "ai"})

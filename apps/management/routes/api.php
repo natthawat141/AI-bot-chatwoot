@@ -22,6 +22,9 @@ Route::middleware(['api.token:read', 'throttle:120,1'])->prefix('v1')->name('api
     Route::get('/catalog/{package}', [CatalogSearchController::class, 'show'])->name('catalog.show');
     Route::get('/flex/carousel', [FlexMessageApiController::class, 'carousel'])->name('flex.carousel');
     Route::get('/flex/catalog/{package}', [FlexMessageApiController::class, 'show'])->name('flex.show');
+    Route::get('/flex/loan', [FlexMessageApiController::class, 'loan'])->name('flex.loan');
+    Route::get('/flex/consignment', [FlexMessageApiController::class, 'consignment'])->name('flex.consignment');
+    Route::get('/flex/about', [FlexMessageApiController::class, 'about'])->name('flex.about');
 });
 
 Route::post('/v1/interactions', [BotInteractionController::class, 'store'])
