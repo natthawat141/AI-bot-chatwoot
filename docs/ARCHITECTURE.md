@@ -10,64 +10,96 @@ Management database.
 ## Runtime architecture
 
 ```mermaid
-flowchart LR
-    customer["Customer\nLINE / Web channel"]
-    caddy["Caddy\nHTTPS reverse proxy"]
-
-    subgraph chatwoot["Chatwoot conversation platform"]
-        rails["Chatwoot Rails\nConversation owner"]
-        sidekiq["Chatwoot Sidekiq\nBackground jobs"]
-        cwdb[("Chatwoot PostgreSQL")]
-        cwredis[("Chatwoot Redis")]
-        inbox["LINE Business Inbox\nBusiness AI Agent Bot"]
+flowchart TD
+    subgraph linePlatform["LINE Platform & Client"]
+        customer(["👤 Customer Mobile App"])
+        richmenu["🖼️ LINE Rich Menu\n(6 Actions: Condo, House, Consign, Loan, Hours, Staff)"]
+        linemessaging["📡 LINE Messaging API\n(Webhook & Push API)"]
     end
 
-    subgraph ai["AI orchestration boundary"]
+    caddy["🔒 Caddy HTTPS Reverse Proxy\n(SSL Termination & Routing)"]
+
+    subgraph chatwoot["Chatwoot Conversation Platform"]
+        rails["Chatwoot Rails API\nConversation & Inbox Owner"]
+        sidekiq["Chatwoot Sidekiq\nAsync Delivery Jobs"]
+        cwdb[("PostgreSQL\nChatwoot DB")]
+        cwredis[("Redis\nChatwoot Cache")]
+        inbox["LINE Business Inbox #1\nAgent Bot Webhook"]
+    end
+
+    subgraph ai["AI Orchestration Boundary"]
         webhook["AI Webhook API\nFastAPI"]
-        queue[("Redis durable queue\nWebhook events")]
-        worker["AI Worker\nRetry + dead-letter"]
-        openrouter["OpenRouter\nConfigured LLM"]
+        queue[("Redis Durable Queue\nEvents")]
+        worker["AI Worker\nSingle-process Locking & Routing"]
+        openrouter["🧠 OpenRouter\nLLM Completion"]
     end
 
-    subgraph management["Management system of record"]
-        react["React + Inertia\nAdmin UI"]
-        laravel["Laravel Management\nAuth + Knowledge API"]
-        mdb[("Management MySQL")]
+    subgraph management["Laravel Management (System of Record)"]
+        react["Admin Dashboard\nReact + Inertia UI"]
+        laravel["Laravel API v1\nCatalog, Knowledge, Flex Generator"]
+        mdb[("MySQL\nManagement DB")]
     end
 
-    customer --> caddy --> rails
+    %% Inbound Flow
+    customer -->|Tap Menu Button / Type Chat| richmenu
+    richmenu -->|Message Event| linemessaging
+    linemessaging -->|Webhook Event| caddy
+    caddy -->|/webhooks/line| rails
     rails --> inbox
     rails <--> sidekiq
     rails <--> cwdb
     sidekiq <--> cwredis
-    inbox -->|Agent Bot event| webhook
-    webhook -->|enqueue immediately| queue
-    queue --> worker
-    worker -->|conversation read / reply / handoff| rails
-    worker -->|catalog and knowledge query| laravel
+
+    %% AI Pipeline
+    inbox -->|Webhook POST /webhook/chatwoot/{token}| webhook
+    webhook -->|rpush event| queue
+    queue -->|consume| worker
+
+    %% Management API & Knowledge Integration
+    worker -->|1. Search Catalog / FAQs / Business Profile| laravel
+    worker -->|2. Fetch Structured LINE Flex JSON| laravel
     laravel <--> mdb
-    worker -->|grounded completion| openrouter
-    react --> laravel
-    worker -->|assign team on handoff| rails
+    react -->|Staff CRUD / Admin Profile| laravel
+
+    %% LLM Grounding
+    worker -->|3. Grounded Thai Chat Completion| openrouter
+
+    %% Outbound Multi-Channel Delivery
+    worker -->|4a. Deliver Conversational Text Message| rails
+    rails -->|Send Message| linemessaging
+    worker -->|4b. Direct LINE Push API: Flex Carousel & Cards| linemessaging
+    linemessaging -->|Deliver Rich Cards & Chat| customer
+
+    %% Staff Handoff & Return
+    worker -->|Assign Team & Set Labels (human-handling)| rails
+    rails -.->|Return to AI Label Event| webhook
 ```
 
-## Message lifecycle
+## Message Lifecycle & Data Flow
 
-1. A customer message arrives through a Chatwoot inbox.
-2. Chatwoot sends the Agent Bot event to the internal AI webhook using the secret path token.
-3. The webhook validates the token, writes the event to Redis, and returns `202 Accepted`.
-4. The AI Worker consumes the event, retries transient failures up to three times, and moves
-   exhausted events to a dead-letter queue.
-5. The worker reads approved catalog/knowledge records -- and, for identity/greeting/business-meta
-   questions, the cached Business Profile singleton -- from Laravel and sends grounded replies
-   through the Chatwoot API.
-6. Requests for a person, a payment/refund problem, or other handoff conditions change the
-   conversation to human mode, assign it to the shared handoff team, and apply the `คนดูแลอยู่`
-   Chatwoot label so staff can see the state without opening custom attributes.
-7. Chatwoot also delivers `conversation_updated` events (label/status/assignment changes) to the
-   same webhook. Staff apply the `ส่งกลับ-ai` label to explicitly hand a conversation back to the
-   AI; the worker refetches live state, clears both labels, unassigns the human agent, and resets
-   `ai_mode` to `ai`.
+1. **Customer Interaction via LINE:**
+   * A customer taps a button on the **LINE Rich Menu** (e.g. 🏢 คอนโด, 🏡 บ้าน, 💰 สินเชื่อ, 📝 ฝากขาย, 🕒 ข้อมูล) or types a free-text message.
+   * LINE delivers the message event through the **LINE Messaging API** to Caddy and into **Chatwoot's LINE Inbox**.
+
+2. **Event Queueing & Orchestration:**
+   * Chatwoot fires an `Agent Bot` webhook event to the **AI Webhook API (`FastAPI`)**.
+   * The webhook validates the token and enqueues the payload into **Redis**.
+   * The **AI Worker** consumes the event under a per-conversation asyncio lock to guarantee sequential processing.
+
+3. **Data Retrieval from Laravel Management (System of Record):**
+   * The AI worker queries the **Laravel Management API (`/api/v1`)**:
+     * `POST /api/v1/catalog/search`: Retrieves real available condo/house listings with attribute filters.
+     * `GET /api/v1/business-profile`: Retrieves authoritative business hours, contact info, and company metadata.
+     * `GET /api/v1/faqs` & `GET /api/v1/knowledge`: Retrieves verified business policies and Q&As.
+     * `GET /api/v1/flex/carousel` & `GET /api/v1/flex/{loan|consignment|about}`: Returns structured **LINE Flex Message JSON**.
+
+4. **Response Delivery (Hybrid Text + Flex Cards):**
+   * **Structured UI (Flex Cards):** For catalog listings and official services, the AI Worker pushes official **LINE Flex Carousel & Bubble Cards** directly via the **LINE Messaging Push API**.
+   * **Conversational AI Text:** The AI Worker invokes **OpenRouter LLM** with grounded context to synthesize a natural, polite Thai chat response and sends it through the **Chatwoot Messages API**.
+
+5. **Human Handoff & Return to AI:**
+   * If the customer requests human assistance or mentions complaints/payment issues, the worker assigns the conversation to the staff team and applies the `human-handling` label.
+   * When staff apply the `return-to-ai` label in Chatwoot, the worker resets `ai_mode` to `ai`, unassigns staff, and resumes automated AI responses.
 
 ## Ownership and security boundaries
 
