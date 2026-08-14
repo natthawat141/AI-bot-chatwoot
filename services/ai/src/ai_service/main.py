@@ -370,13 +370,22 @@ def search_query(content: str) -> str:
     return " ".join(text.split())[:160]
 
 
+OPEN_ENDED_PREFIXES = (
+    "ไหน", "ไหร", "อะไร", "ว่าง", "มี", "บ้าง", "แนะนำ", "ใหม่", "สวย", "ถูก", "ดี", 
+    "พร้อมอยู่", "มือสอง", "ราคา", "งบ", "กี่", "โปร", "หมด", "โครงการไหน", "โครงการอะไร",
+    "ตัวไหน", "อันไหน", "ห้องไหน", "แบบไหน", "หลังไหน", "เข้าใหม่", "เพิ่งเข้า", "ล่าสุด",
+    "ไหรว่าง", "ไหนว่าง", "ว่างไหม", "ว่างมั้ย", "ว่างบ้าง"
+)
+
 NON_LOCATION_WORDS = frozenset({
-    "อยู่", "อยู่ได้", "มี", "ราคา", "งบ", "ไหน", "อะไร", "ครับ", "ค่ะ", "คะ",
+    "อยู่", "อยู่ได้", "มี", "ราคา", "งบ", "ไหน", "ไหร", "อะไร", "ครับ", "ค่ะ", "คะ", "คับ", "ฮะ",
     "นะ", "หน่อย", "บ้าง", "แนะนำ", "โครงการ", "ใหม่", "มือสอง", "ขาย", "เช่า",
     "ให้เช่า", "ซื้อ", "สวย", "ดี", "ถูก", "แพง", "ดู", "สนใจ", "ทั้งหมด", "กี่", "ห้อง",
     "โครงการไหน", "กี่ห้องนอน", "ห้องนอน", "ห้องน้ำ", "ตารางเมตร", "ตร.ม", "ตร.ว", "ไร่",
+    "ว่าง", "ห้องว่าง", "มีว่าง", "ไหนว่าง", "ไหรว่าง", "ว่างบ้าง", "ว่างไหม", "ว่างมั้ย",
+    "ตอนนี้", "วันนี้", "พรุ่งนี้", "ช่วย", "ขอดู", "อยากดู",
 })
-STOP_SUFFIXES = ("ไหม", "มั้ย", "หรอ", "เหรอ", "ครับ", "ค่ะ", "คะ", "บ้าง", "หน่อย", "นะ", "จ้า", "จ๊ะ")
+STOP_SUFFIXES = ("ไหม", "มั้ย", "หรอ", "เหรอ", "ครับ", "ค่ะ", "คะ", "คับ", "ฮะ", "จ้า", "จ๊ะ", "บ้าง", "หน่อย", "นะ", "ละ", "ล่ะ")
 
 
 def clean_catalog_location(raw: str) -> str | None:
@@ -392,8 +401,12 @@ def clean_catalog_location(raw: str) -> str | None:
             break
     if not text or text in NON_LOCATION_WORDS or len(text) < 2:
         return None
-    if any(text == inv or text.startswith(inv) for inv in ("ให้เช่า", "เช่า", "ขาย", "ซื้อ", "แนะนำ", "โครงการ", "มี", "อยู่", "สนใจ", "ดู")):
-        return None
+    for prefix in OPEN_ENDED_PREFIXES:
+        if text.startswith(prefix):
+            return None
+    for inv in ("ให้เช่า", "เช่า", "ขาย", "ซื้อ", "แนะนำ", "โครงการ", "มี", "อยู่", "สนใจ", "ดู"):
+        if text == inv or text.startswith(inv):
+            return None
     return text if len(text) >= 2 else None
 
 
@@ -417,9 +430,9 @@ def catalog_filters(message: str) -> dict[str, Any]:
         multiplier = {"ล้าน": 1_000_000, "แสน": 100_000, "บาท": 1}[unit]
         filters["price"] = {"max": value * multiplier}
     loc = None
-    if match := re.search(r"(?:แถว|ย่าน)\s*([ก-๙A-Za-z0-9-]{2,80})", message):
+    if match := re.search(r"(?:แถว|ย่าน|โซน|ใกล้|ติด|ทำเล)\s*([ก-๙A-Za-z0-9-]{2,80})", message):
         loc = clean_catalog_location(match.group(1))
-    if not loc and (match := re.search(r"(?:คอนโด|ที่ดิน|บ้าน)\s*([ก-๙A-Za-z][ก-๙A-Za-z-]{1,79})(?=\s|$)", message)):
+    if not loc and (match := re.search(r"(?:คอนโด|ที่ดิน|บ้าน)\s+([ก-๙A-Za-z][ก-๙A-Za-z-]{1,79})(?=\s|$)", message)):
         loc = clean_catalog_location(match.group(1))
     if not loc and (match := re.search(r"(?:คอนโด|ที่ดิน|บ้าน)([ก-๙A-Za-z][ก-๙A-Za-z-]{1,79})", message)):
         loc = clean_catalog_location(match.group(1))
