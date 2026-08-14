@@ -9,19 +9,22 @@ account = Account.find_or_create_by!(name: ENV.fetch('CHATWOOT_ACCOUNT_NAME', 'B
   record.settings = {}
 end
 
-email = ENV.fetch('CHATWOOT_ADMIN_EMAIL', ENV.fetch('ADMIN_EMAIL', 'admin@local.invalid'))
+email = ENV.fetch('CHATWOOT_ADMIN_EMAIL', ENV.fetch('ADMIN_EMAIL', 'bill.natthawat@gmail.com'))
 password = ENV.fetch('CHATWOOT_ADMIN_PASSWORD', ENV.fetch('ADMIN_PASSWORD'))
 user = User.find_or_initialize_by(email: email.downcase)
 user.assign_attributes(
-  name: ENV.fetch('CHATWOOT_ADMIN_NAME', 'Business Administrator'),
+  name: ENV.fetch('CHATWOOT_ADMIN_NAME', 'Bill Natthawat'),
   password: password,
   password_confirmation: password,
   provider: 'email',
   uid: email.downcase,
   confirmed_at: Time.current
 )
+user.update_columns(type: 'SuperAdmin') if user.persisted?
 user.save!
+user.update_columns(type: 'SuperAdmin')
 account.account_users.find_or_create_by!(user: user) { |membership| membership.role = :administrator }
+account.account_users.where(user: user).update_all(role: :administrator)
 
 service_email = ENV.fetch('CHATWOOT_AI_SERVICE_EMAIL', 'ai-service@local.invalid')
 service_password = ENV.fetch('CHATWOOT_AI_SERVICE_PASSWORD', password)
@@ -48,7 +51,9 @@ team.update!(allow_auto_assign: true) unless team.allow_auto_assign?
 # The AI service account must stay out of the human round-robin pool, or a
 # handed-off conversation can be auto-assigned right back to the bot.
 TeamMember.where(team_id: team.id, user_id: service_user.id).destroy_all
-TeamMember.find_or_create_by!(team_id: team.id, user_id: user.id)
+account.users.where.not(id: service_user.id).find_each do |human_user|
+  TeamMember.find_or_create_by!(team_id: team.id, user_id: human_user.id)
+end
 service_access_token = service_user.access_token || service_user.create_access_token
 
 # Return to AI (SPEC FR-OWN-005/FR-HO-006): staff apply RETURN_TO_AI_LABEL to
@@ -94,7 +99,17 @@ if line_id.present? && line_secret.present? && line_token.present?
   end
   inbox.update!(enable_auto_assignment: false)
   InboxMember.find_or_create_by!(inbox: inbox, user: service_user)
+  account.users.where.not(id: service_user.id).find_each do |human_user|
+    InboxMember.find_or_create_by!(inbox: inbox, user: human_user)
+  end
   AgentBotInbox.find_or_create_by!(account: account, agent_bot: bot, inbox: inbox) { |record| record.status = :active }
+end
+
+account.inboxes.find_each do |acc_inbox|
+  acc_inbox.update!(enable_auto_assignment: false)
+  account.users.where.not(id: service_user.id).find_each do |human_user|
+    InboxMember.find_or_create_by!(inbox: acc_inbox, user: human_user)
+  end
 end
 
 FileUtils.mkdir_p('/runtime')
