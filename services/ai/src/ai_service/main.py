@@ -328,6 +328,33 @@ def search_query(content: str) -> str:
     return " ".join(text.split())[:160]
 
 
+NON_LOCATION_WORDS = frozenset({
+    "อยู่", "อยู่ได้", "มี", "ราคา", "งบ", "ไหน", "อะไร", "ครับ", "ค่ะ", "คะ",
+    "นะ", "หน่อย", "บ้าง", "แนะนำ", "โครงการ", "ใหม่", "มือสอง", "ขาย", "เช่า",
+    "ให้เช่า", "ซื้อ", "สวย", "ดี", "ถูก", "แพง", "ดู", "สนใจ", "ทั้งหมด", "กี่", "ห้อง",
+    "โครงการไหน", "กี่ห้องนอน", "ห้องนอน", "ห้องน้ำ", "ตารางเมตร", "ตร.ม", "ตร.ว", "ไร่",
+})
+STOP_SUFFIXES = ("ไหม", "มั้ย", "หรอ", "เหรอ", "ครับ", "ค่ะ", "คะ", "บ้าง", "หน่อย", "นะ", "จ้า", "จ๊ะ")
+
+
+def clean_catalog_location(raw: str) -> str | None:
+    text = raw.strip()
+    for _ in range(5):
+        stripped = False
+        for s in STOP_SUFFIXES:
+            if text.endswith(s) and len(text) > len(s):
+                text = text[:-len(s)].strip()
+                stripped = True
+                break
+        if not stripped:
+            break
+    if not text or text in NON_LOCATION_WORDS or len(text) < 2:
+        return None
+    if any(text == inv or text.startswith(inv) for inv in ("ให้เช่า", "เช่า", "ขาย", "ซื้อ", "แนะนำ", "โครงการ", "มี", "อยู่", "สนใจ", "ดู")):
+        return None
+    return text if len(text) >= 2 else None
+
+
 def catalog_filters(message: str) -> dict[str, Any]:
     lower = normalize_text(message)
     filters: dict[str, Any] = {"limit": 10, "sort": "relevance"}
@@ -347,12 +374,15 @@ def catalog_filters(message: str) -> dict[str, Any]:
         value, unit = float(match.group(1)), match.group(2) or "บาท"
         multiplier = {"ล้าน": 1_000_000, "แสน": 100_000, "บาท": 1}[unit]
         filters["price"] = {"max": value * multiplier}
-    if match := re.search(r"(?:แถว|ย่าน|ที่)\s*([ก-๙A-Za-z0-9-]{2,80})", message):
-        filters["location"] = {"text": match.group(1)}
-    elif match := re.search(r"(?:คอนโด|ที่ดิน|บ้าน)\s*([ก-๙A-Za-z][ก-๙A-Za-z-]{1,79})(?=\s|$)", message):
-        candidate = match.group(1)
-        if candidate not in {"อยู่", "อยู่ได้", "มี", "ราคา", "งบ", "ไหน", "อะไร"}:
-            filters["location"] = {"text": candidate}
+    loc = None
+    if match := re.search(r"(?:แถว|ย่าน)\s*([ก-๙A-Za-z0-9-]{2,80})", message):
+        loc = clean_catalog_location(match.group(1))
+    if not loc and (match := re.search(r"(?:คอนโด|ที่ดิน|บ้าน)\s*([ก-๙A-Za-z][ก-๙A-Za-z-]{1,79})(?=\s|$)", message)):
+        loc = clean_catalog_location(match.group(1))
+    if not loc and (match := re.search(r"(?:คอนโด|ที่ดิน|บ้าน)([ก-๙A-Za-z][ก-๙A-Za-z-]{1,79})", message)):
+        loc = clean_catalog_location(match.group(1))
+    if loc:
+        filters["location"] = {"text": loc}
     return filters
 
 
