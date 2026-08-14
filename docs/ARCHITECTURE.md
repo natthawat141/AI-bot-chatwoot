@@ -105,14 +105,16 @@ flowchart TD
 
 | Concern | Owner | Boundary |
 |---|---|---|
-| Conversation history and inbox state | Chatwoot | Rails API and PostgreSQL |
+| Conversation history and inbox state | Chatwoot | Rails API and PostgreSQL (`enable_auto_assignment = false` on shared inboxes) |
 | Business catalog and knowledge | Laravel Management | Authenticated read API and MySQL |
 | AI orchestration and retries | Python AI service | FastAPI, Redis queue, worker |
 | Model completion | OpenRouter | Outbound HTTPS from AI service |
-| Human handoff | Chatwoot team | Team assignment; no individual agent binding |
+| Human handoff | Chatwoot team | Team assignment; no individual agent binding until staff claims |
 
-Secrets are supplied through runtime environment files and are excluded from Git. Customer
-messages are not written to application logs.
+### Critical Inbox & Session Invariants:
+1. **Inbox Auto-Assignment Disabled:** Inboxes MUST keep `enable_auto_assignment = false`. All incoming AI-managed conversations remain in `Open` status and `Unassigned` so that all human agents and administrators see them in real-time in the central queue (`Unassigned` / `All`).
+2. **Clean Delivery on LINE:** When an interactive Flex Message is pushed to LINE, the worker records the AI response in Chatwoot as a **Private Note** (`private = true`) to prevent sending duplicate raw text bubbles to the customer's LINE chat while maintaining full audit logs for staff.
+3. **Secrets Isolation:** Secrets are supplied through runtime environment files and are excluded from Git. Customer messages are not written to application logs.
 
 ## Deployment topology
 
