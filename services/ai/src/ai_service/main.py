@@ -805,16 +805,7 @@ async def _process_locked(
         LOG.info("ignored_event account=%s conversation=%s reason=ownership_race", account_id, conversation_id)
         return
 
-    if catalog_state:
-        await chatwoot.custom_attributes(account_id, conversation_id, catalog_state)
-    try:
-        await chatwoot.message(account_id, conversation_id, answer)
-    except UpstreamError as exc:
-        if exc.delivery_unknown:
-            LOG.warning("answer account=%s conversation=%s result=delivery_unknown", account_id, conversation_id)
-            return
-        raise
-
+    flex_delivered = False
     # If customer is on LINE, push corresponding Flex Card for rich interactive responses
     if settings.line_channel_access_token:
         line_user_id = (
@@ -825,24 +816,36 @@ async def _process_locked(
             or ""
         )
         if isinstance(line_user_id, str) and line_user_id.startswith("U"):
-            if intent == "catalog" and records:
+            if intent == "catalog" and (records or alternatives):
                 category_slug = current_filters.get("category_slug") if isinstance(current_filters, Mapping) else None
                 flex_payload = await management.flex_carousel(category_slug, limit=5)
                 if flex_payload:
-                    await line_push_flex(client, settings.line_channel_access_token, line_user_id, flex_payload)
+                    flex_delivered = await line_push_flex(client, settings.line_channel_access_token, line_user_id, flex_payload)
             else:
                 lower_content = normalize_text(content)
                 service_card_type: str | None = None
-                if any(term in lower_content for term in ("สินเชื่อ", "กู้บ้าน", "กู้ธนาคาร", "ผ่อนบ้าน")):
+                if any(term in lower_content for term in ("สินเชื่อ", "กู้บ้าน", "กู้ธนาคาร", "ผ่อนบ้าน", "loan", "mortgage")):
                     service_card_type = "loan"
-                elif any(term in lower_content for term in ("ฝากขาย", "ฝากเช่า", "ปล่อยเช่า", "ขายฝาก")):
+                elif any(term in lower_content for term in ("ฝากขาย", "ฝากเช่า", "ปล่อยเช่า", "ขายฝาก", "consign", "deposit")):
                     service_card_type = "consignment"
-                elif any(term in lower_content for term in ("เปิดกี่โมง", "เวลาทำการ", "บริการอะไรบ้าง", "ติดต่อช่องทางไหน", "ติดต่อได้ที่ไหน")):
+                elif any(term in lower_content for term in ("เปิดกี่โมง", "เวลาทำการ", "บริการอะไรบ้าง", "ติดต่อช่องทางไหน", "ติดต่อได้ที่ไหน", "hours", "opening", "about")):
                     service_card_type = "about"
                 if service_card_type:
                     flex_payload = await management.flex_service_card(service_card_type)
                     if flex_payload:
-                        await line_push_flex(client, settings.line_channel_access_token, line_user_id, flex_payload)
+                        flex_delivered = await line_push_flex(client, settings.line_channel_access_token, line_user_id, flex_payload)
+
+    if catalog_state:
+        await chatwoot.custom_attributes(account_id, conversation_id, catalog_state)
+    try:
+        # When Flex Card is pushed to LINE, record in Chatwoot as private note (private=True)
+        # so agents can see the log while customer receives only the interactive Flex Card without duplicate text.
+        await chatwoot.message(account_id, conversation_id, answer, private=flex_delivered)
+    except UpstreamError as exc:
+        if exc.delivery_unknown:
+            LOG.warning("answer account=%s conversation=%s result=delivery_unknown", account_id, conversation_id)
+            return
+        raise
 
     try:
         await chatwoot.custom_attributes(account_id, conversation_id, {"ai_completed_message_id": str(message_id), "ai_mode": "ai"})
